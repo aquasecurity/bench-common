@@ -66,20 +66,14 @@ func (controls *Controls) RunGroup(gids ...string) Summary {
 	}
 
 	for _, group := range controls.Groups {
-
-		fmt.Println("Group:", group.ID)
 		for _, gid := range gids {
-			fmt.Println("  Group:", group.ID, "Requested Group ID:", gid)
 			if gid == group.ID {
-				fmt.Println("    IDs match")
 				for _, check := range group.Checks {
-					fmt.Println("    Run check:", check.ID)
 					check.Run()
 					summarize(controls, check)
 				}
 
-				//g = append(g, group)
-				fmt.Println("    Add group to reviewed group")
+				g = append(g, group)
 			}
 		}
 
@@ -162,7 +156,6 @@ func (controls *Controls) JSON() ([]byte, error) {
 }
 
 func summarize(controls *Controls, check *Check) {
-	fmt.Println("Summarize")
 	switch check.State {
 	case PASS:
 		controls.Summary.Pass++

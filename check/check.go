@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -83,6 +82,7 @@ func (c *Check) Run() {
 	// Check if command exists or exit with WARN.
 	for _, cmd := range c.Commands {
 		if !isShellCommand(cmd.Path) {
+			glog.V(1).Infof("%s: command not found", cmd.Path)
 			c.State = WARN
 			return
 		}
@@ -214,8 +214,7 @@ func isShellCommand(s string) bool {
 
 	out, err := cmd.Output()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
+		return false
 	}
 
 	if strings.Contains(string(out), s) {
