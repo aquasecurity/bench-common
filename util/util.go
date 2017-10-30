@@ -68,7 +68,7 @@ func continueWithError(err error, msg string) string {
 	return ""
 }
 
-func cleanIDs(list string) []string {
+func CleanIDs(list string) []string {
 	list = strings.Trim(list, ",")
 	ids := strings.Split(list, ",")
 
