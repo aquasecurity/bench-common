@@ -49,22 +49,26 @@ func handleError(err error, context string) (errmsg string) {
 
 // Check contains information about a recommendation.
 type Check struct {
-	ID          string `yaml:"id"`
-	Description string
+	ID          string      `yaml:"id" json:"test_number"`
+	Description string      `json:"test_desc"`
 	Audit       string      `json:"omit"`
 	Type        string      `json:"type"`
 	Commands    []*exec.Cmd `json:"omit"`
 	Tests       *test.Tests `json:"omit"`
 	Set         bool        `json:"omit"`
-	Remediation string
-	State
+	Remediation string      `json:"-"`
+	TestInfo    []string    `json:"test_info"`
+	State       `json:"status"`
 }
 
 // Group is a collection of similar checks.
 type Group struct {
-	ID          string `yaml:"id"`
-	Description string
-	Checks      []*Check
+	ID          string   `yaml:"id" json:"section"`
+	Description string   `json:"desc"`
+	Checks      []*Check `json:"results"`
+	Pass        int      `json:"pass"`
+	Fail        int      `json:"fail"`
+	Warn        int      `json:"warn"`
 }
 
 // Run executes the audit commands specified in a check and outputs
@@ -153,7 +157,9 @@ func (c *Check) Run() {
 		i++
 	}
 
-	glog.V(2).Infof("error messages %s\n", errmsgs)
+	if errmsgs != "" {
+		glog.V(2).Info(errmsgs)
+	}
 
 	res := c.Tests.Execute(out.String())
 	if res {

@@ -118,6 +118,9 @@ type Tests struct {
 }
 
 func (ts *Tests) Execute(s string) (result bool) {
+	if ts == nil || s == "" {
+		return result
+	}
 	res := make([]bool, len(ts.TestItems))
 
 	for i, t := range ts.TestItems {
