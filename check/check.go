@@ -22,7 +22,7 @@ import (
 	"regexp"
 	"strings"
 
-	test "github.com/aquasecurity/bench-common/auditeval"
+	"github.com/aquasecurity/bench-common/auditeval"
 	"github.com/golang/glog"
 )
 
@@ -49,16 +49,17 @@ func handleError(err error, context string) (errmsg string) {
 
 // Check contains information about a recommendation.
 type Check struct {
-	ID          string      `yaml:"id" json:"test_number"`
-	Description string      `json:"test_desc"`
-	Audit       string      `json:"omit"`
-	Type        string      `json:"type"`
-	Commands    []*exec.Cmd `json:"omit"`
-	Tests       *test.Tests `json:"omit"`
-	Set         bool        `json:"omit"`
-	Remediation string      `json:"-"`
-	TestInfo    []string    `json:"test_info"`
+	ID          string           `yaml:"id" json:"test_number"`
+	Description string           `json:"test_desc"`
+	Audit       string           `json:"omit"`
+	Type        string           `json:"type"`
+	Commands    []*exec.Cmd      `json:"omit"`
+	Tests       *auditeval.Tests `json:"omit"`
+	Set         bool             `json:"omit"`
+	Remediation string           `json:"-"`
+	TestInfo    []string         `json:"test_info"`
 	State       `json:"status"`
+	ActualValue string `json:"actual_value"`
 }
 
 // Group is a collection of similar checks.
@@ -161,12 +162,21 @@ func (c *Check) Run() {
 		glog.V(2).Info(errmsgs)
 	}
 
-	res := c.Tests.Execute(out.String())
-	if res {
-		c.State = PASS
+	finalOutput := c.Tests.Execute(out.String())
+	if finalOutput != nil {
+		c.ActualValue = finalOutput.ActualResult
+
+		if finalOutput.TestResult {
+			c.State = PASS
+		} else {
+			c.State = FAIL
+		}
 	} else {
-		c.State = FAIL
+		c.State = WARN
+		glog.V(1).Info("Test output contains a nil value")
+		return
 	}
+
 }
 
 // textToCommand transforms an input text representation of commands to be
