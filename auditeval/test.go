@@ -50,37 +50,15 @@ type testOutput struct {
 func (t *testItem) execute(s string) *testOutput {
 	result := &testOutput{TestResult: false, ActualResult: ""}
 
-	match := strings.Contains(s, t.Flag)
-
+	s = strings.TrimRight(s, " \n")
 	if t.Set {
-		var flagVal string
-		isset := match
-
-		if isset && t.Compare.Op != "" {
-			// Expects flags in the form;
-			// --flag=somevalue
-			// --flag
-			// somevalue
-			pttn := `(` + t.Flag + `)(=)*([^\s,]*) *`
-			flagRe := regexp.MustCompile(pttn)
-			vals := flagRe.FindStringSubmatch(s)
-
-			if len(vals) > 0 {
-				if vals[3] != "" {
-					flagVal = vals[3]
-				} else {
-					flagVal = vals[1]
-				}
-			} else {
-				fmt.Fprintf(os.Stderr, "invalid flag in testitem definition")
-				os.Exit(1)
-			}
-
+		if t.Compare.Op != "" {
+			flagVal := getFlagValue(s, t.Flag)
 			result.ActualResult = strings.ToLower(flagVal)
+
 			switch t.Compare.Op {
 			case "eq":
 				value := strings.ToLower(flagVal)
-
 				// Do case insensitive comparaison for booleans ...
 				if value == "false" || value == "true" {
 					result.TestResult = value == t.Compare.Value
@@ -98,20 +76,28 @@ func (t *testItem) execute(s string) *testOutput {
 				}
 
 			case "gt":
-				a, b := toNumeric(flagVal, t.Compare.Value)
-				result.TestResult = a > b
+				a, b, err := toNumeric(flagVal, t.Compare.Value)
+				if err == nil {
+					result.TestResult = a > b
+				}
 
 			case "gte":
-				a, b := toNumeric(flagVal, t.Compare.Value)
-				result.TestResult = a >= b
+				a, b, err := toNumeric(flagVal, t.Compare.Value)
+				if err == nil {
+					result.TestResult = a >= b
+				}
 
 			case "lt":
-				a, b := toNumeric(flagVal, t.Compare.Value)
-				result.TestResult = a < b
+				a, b, err := toNumeric(flagVal, t.Compare.Value)
+				if err == nil {
+					result.TestResult = a < b
+				}
 
 			case "lte":
-				a, b := toNumeric(flagVal, t.Compare.Value)
-				result.TestResult = a <= b
+				a, b, err := toNumeric(flagVal, t.Compare.Value)
+				if err == nil {
+					result.TestResult = a <= b
+				}
 
 			case "has":
 				result.TestResult = strings.Contains(flagVal, t.Compare.Value)
@@ -120,12 +106,11 @@ func (t *testItem) execute(s string) *testOutput {
 				result.TestResult = !strings.Contains(flagVal, t.Compare.Value)
 			}
 		} else {
-			result.TestResult = isset
+			result.TestResult, _ = regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, s)
 		}
-
 	} else {
-		notset := !match
-		result.TestResult = notset
+		r, _ := regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, s)
+		result.TestResult = !r
 	}
 	return result
 }
@@ -174,8 +159,10 @@ func (ts *Tests) Execute(s string) *testOutput {
 	return finalOutput
 }
 
-func toNumeric(a, b string) (c, d int) {
-	var err error
+func toNumeric(a, b string) (c, d int, err error) {
+	if len(a) == 0 || len(b) == 0 {
+		return -1, -1, fmt.Errorf("Cannot convert blank value to numeric")
+	}
 	c, err = strconv.Atoi(a)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error converting %s: %s\n", a, err)
@@ -187,5 +174,28 @@ func toNumeric(a, b string) (c, d int) {
 		os.Exit(1)
 	}
 
-	return c, d
+	return c, d, err
+}
+
+func getFlagValue(s, flag string) string {
+	var flagVal string
+	pttns := []string{
+		flag + `=([^ \n]*)`,
+		flag + ` +([^- ]+)`,
+		`(?:^| +)` + `(` + flag + `)` + `(?: |$)`,
+	}
+	for _, pttn := range pttns {
+		flagRe := regexp.MustCompile(pttn)
+		vals := flagRe.FindStringSubmatch(s)
+		for i, currentValue := range vals {
+			if i == 0 {
+				continue
+			}
+			if len(currentValue) > 0 {
+				flagVal = currentValue
+				return flagVal
+			}
+		}
+	}
+	return flagVal
 }
