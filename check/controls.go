@@ -24,7 +24,7 @@ import (
 // Controls holds all controls to check for master nodes.
 type Controls struct {
 	ID          string   `yaml:"id" json:"id"`
-	Description string   `json:"text"`
+	Description string   `json:"description"`
 	Groups      []*Group `json:"tests"`
 	Summary
 }
@@ -70,9 +70,7 @@ func (controls *Controls) RunGroup(gids ...string) Summary {
 			if gid == group.ID {
 				for _, check := range group.Checks {
 					check.Run()
-					check.TestInfo = append(check.TestInfo, check.Remediation)
 					summarize(controls, check)
-					summarizeGroup(group, check)
 				}
 
 				g = append(g, group)
@@ -101,7 +99,6 @@ func (controls *Controls) RunChecks(ids ...string) Summary {
 			for _, id := range ids {
 				if id == check.ID {
 					check.Run()
-					check.TestInfo = append(check.TestInfo, check.Remediation)
 					summarize(controls, check)
 
 					// Check if we have already added this checks group.
@@ -166,16 +163,5 @@ func summarize(controls *Controls, check *Check) {
 		controls.Summary.Fail++
 	case WARN:
 		controls.Summary.Warn++
-	}
-}
-
-func summarizeGroup(group *Group, check *Check) {
-	switch check.State {
-	case PASS:
-		group.Pass++
-	case FAIL:
-		group.Fail++
-	case WARN:
-		group.Warn++
 	}
 }
