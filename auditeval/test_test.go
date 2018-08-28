@@ -49,8 +49,39 @@ func TestTestExecute(t *testing.T) {
 
 	for _, c := range cases {
 		res := ts.Execute(c.str)
-		if res != c.want {
+		if res.TestResult != c.want {
 			t.Errorf("expected:%v, got:%v\n", c.want, res)
+		}
+	}
+}
+
+func Test_getFlagValue(t *testing.T) {
+
+	type TestRegex struct {
+		Input    string
+		Flag     string
+		Expected string
+	}
+
+	tests := []TestRegex{
+		{Input: "XXX: User=root XXX", Flag: "User", Expected: "root"},
+		{Input: "XXX: User=", Flag: "User", Expected: ""},
+		{Input: "XXX: User= AAA XXX", Flag: "User", Expected: ""},
+		{Input: "XXX: XXX User=some_user XXX", Flag: "User", Expected: "some_user"},
+		{Input: "--flag=AAA,BBB,CCC XXX", Flag: "--flag", Expected: "AAA,BBB,CCC"},
+		{Input: "--flag", Flag: "--flag", Expected: "--flag"},
+		{Input: "XXX --flag AAA XXX", Flag: "--flag", Expected: "AAA"},
+		{Input: "XXX --AAA BBB", Flag: "XXX", Expected: "XXX"},
+		{Input: "XXX", Flag: "XXX", Expected: "XXX"},
+		{Input: "CCC XXX AAA BBB", Flag: "XXX", Expected: "AAA"},
+		{Input: "YXXX", Flag: "XXX", Expected: ""},
+		{Input: "XXXY", Flag: "XXX", Expected: ""},
+	}
+
+	for i, test := range tests {
+		actual := getFlagValue(test.Input, test.Flag)
+		if test.Expected != actual {
+			t.Errorf("test %d fail: expected: %v actual: %v\ntest details: %+v\n", i, test.Expected, actual, test)
 		}
 	}
 }
