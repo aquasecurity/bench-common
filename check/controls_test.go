@@ -59,3 +59,33 @@ func TestRunChecks(t *testing.T) {
 
 	c.RunChecks("1.1.2")
 }
+
+func TestSummarizeGroup(t *testing.T) {
+		type TestCase struct {
+			state State
+			group Group
+			check Check
+			Expected int
+		}
+		var actual int
+
+		testCases := []TestCase{
+			{group:Group{},  check:Check{State: "PASS"}, Expected: 1},
+			{group:Group{},  check:Check{State: "FAIL"}, Expected: 1},
+			{group:Group{},  check:Check{State: "WARN"}, Expected: 1},
+		}
+		for i, test := range testCases {
+			summarizeGroup(&test.group, &test.check)
+			switch test.check.State {
+				case "PASS":
+					actual = test.group.Pass
+				case "FAIL":
+					actual = test.group.Fail
+				case "WARN":
+					actual = test.group.Warn
+			}
+			if actual != test.Expected {
+				t.Errorf("test %d fail: expected: %v actual: %v\ntest details: %+v\n", i, test.Expected, actual, test)
+			}
+		}
+}

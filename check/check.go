@@ -56,7 +56,8 @@ type Check struct {
 	Commands    []*exec.Cmd      `json:"omit"`
 	Tests       *auditeval.Tests `json:"omit"`
 	Set         bool             `json:"omit"`
-	Remediation string           `json:"remediation"`
+	Remediation string           `json:"-"`
+	TestInfo    []string         `json:"test_info"`
 	State       `json:"status"`
 	ActualValue string `json:"actual_value"`
 }
@@ -66,6 +67,9 @@ type Group struct {
 	ID          string   `yaml:"id" json:"section"`
 	Description string   `json:"desc"`
 	Checks      []*Check `json:"results"`
+	Pass        int      `json:"pass"`
+	Fail        int      `json:"fail"`
+	Warn        int      `json:"warn"`
 }
 
 // Run executes the audit commands specified in a check and outputs
