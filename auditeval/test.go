@@ -29,6 +29,12 @@ const (
 	or        = "or"
 )
 
+// Tests combine test items with binary operations to evaluate results.
+type Tests struct {
+	TestItems []*testItem `yaml:"test_items"`
+	BinOp     binOp       `yaml:"bin_op"`
+}
+
 type testItem struct {
 	Flag    string
 	Output  string
@@ -48,77 +54,34 @@ type testOutput struct {
 }
 
 func (t *testItem) execute(s string) *testOutput {
-	result := &testOutput{TestResult: false, ActualResult: ""}
-
+	result := &testOutput{TestResult: true, ActualResult: ""}
 	s = strings.TrimRight(s, " \n")
-	if t.Set {
-		if t.Compare.Op != "" {
-			flagVal := getFlagValue(s, t.Flag)
-			result.ActualResult = strings.ToLower(flagVal)
 
-			switch t.Compare.Op {
-			case "eq":
-				value := strings.ToLower(flagVal)
-				// Do case insensitive comparaison for booleans ...
-				if value == "false" || value == "true" {
-					result.TestResult = value == t.Compare.Value
-				} else {
-					result.TestResult = flagVal == t.Compare.Value
-				}
+	// If the test needs to run on multiple values
+	values := strings.Split(s, "\n")
+	currentResult := false
 
-			case "noteq":
-				value := strings.ToLower(flagVal)
-				// Do case insensitive comparaison for booleans ...
-				if value == "false" || value == "true" {
-					result.TestResult = !(value == t.Compare.Value)
-				} else {
-					result.TestResult = !(flagVal == t.Compare.Value)
-				}
-
-			case "gt":
-				a, b, err := toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					result.TestResult = a > b
-				}
-
-			case "gte":
-				a, b, err := toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					result.TestResult = a >= b
-				}
-
-			case "lt":
-				a, b, err := toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					result.TestResult = a < b
-				}
-
-			case "lte":
-				a, b, err := toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					result.TestResult = a <= b
-				}
-
-			case "has":
-				result.TestResult = strings.Contains(flagVal, t.Compare.Value)
-
-			case "nothave":
-				result.TestResult = !strings.Contains(flagVal, t.Compare.Value)
+	for _, v := range values {
+		if t.Set {
+			if t.Compare.Op != "" {
+				flagVal := getFlagValue(v, t.Flag)
+				result.ActualResult = strings.ToLower(flagVal)
+				currentResult = eval(flagVal, t.Compare.Op, t.Compare.Value)
+			} else {
+				currentResult, _ = regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, v)
 			}
 		} else {
-			result.TestResult, _ = regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, s)
+			r, _ := regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, v)
+			currentResult = !r
 		}
-	} else {
-		r, _ := regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, s)
-		result.TestResult = !r
-	}
-	return result
-}
 
-// Tests combine test items with binary operations to evaluate results.
-type Tests struct {
-	TestItems []*testItem `yaml:"test_items"`
-	BinOp     binOp       `yaml:"bin_op"`
+		if !currentResult {
+			result.TestResult = false
+			break
+		}
+	}
+
+	return result
 }
 
 func (ts *Tests) Execute(s string) *testOutput {
@@ -157,6 +120,60 @@ func (ts *Tests) Execute(s string) *testOutput {
 	finalOutput.ActualResult = res[0].ActualResult
 
 	return finalOutput
+}
+
+func eval(flagVal, compareOp, compareValue string) bool {
+	switch compareOp {
+	case "eq":
+		value := strings.ToLower(flagVal)
+		// Do case insensitive comparaison for booleans ...
+		if value == "false" || value == "true" {
+			return value == compareValue
+		} else {
+			return flagVal == compareValue
+		}
+
+	case "noteq":
+		value := strings.ToLower(flagVal)
+		// Do case insensitive comparaison for booleans ...
+		if value == "false" || value == "true" {
+			return !(value == compareValue)
+		} else {
+			return !(flagVal == compareValue)
+		}
+
+	case "gt":
+		a, b, err := toNumeric(flagVal, compareValue)
+		if err == nil {
+			return a > b
+		}
+
+	case "gte":
+		a, b, err := toNumeric(flagVal, compareValue)
+		if err == nil {
+			return a >= b
+		}
+
+	case "lt":
+		a, b, err := toNumeric(flagVal, compareValue)
+		if err == nil {
+			return a < b
+		}
+
+	case "lte":
+		a, b, err := toNumeric(flagVal, compareValue)
+		if err == nil {
+			return a <= b
+		}
+
+	case "has":
+		return strings.Contains(flagVal, compareValue)
+
+	case "nothave":
+		return !strings.Contains(flagVal, compareValue)
+	}
+
+	return false
 }
 
 func toNumeric(a, b string) (c, d int, err error) {
