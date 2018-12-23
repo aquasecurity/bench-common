@@ -176,7 +176,6 @@ func (c *Check) Run() {
 		glog.V(1).Info("Test output contains a nil value")
 		return
 	}
-
 }
 
 // textToCommand transforms an input text representation of commands to be
