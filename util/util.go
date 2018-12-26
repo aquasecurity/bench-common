@@ -86,19 +86,23 @@ func colorPrint(state check.State, s string) {
 }
 
 // prettyPrint outputs the results to stdout in human-readable format
-func PrettyPrint(r *check.Controls, summary check.Summary, noRemediations bool) {
+func PrettyPrint(r *check.Controls, summary check.Summary, noRemediations, includeTestOutput bool) {
 	colorPrint(check.INFO, fmt.Sprintf("%s %s\n", r.ID, r.Description))
 	for _, g := range r.Groups {
 		colorPrint(check.INFO, fmt.Sprintf("%s %s\n", g.ID, g.Description))
 		for _, c := range g.Checks {
 			colorPrint(c.State, fmt.Sprintf("%s %s\n", c.ID, c.Description))
+
+			if includeTestOutput && c.State == check.FAIL && len(c.ActualValue) > 0 {
+				printRawOutput(c.ActualValue)
+			}
 		}
 	}
 
 	fmt.Println()
 
 	// Print remediations.
-	if  !noRemediations && (summary.Fail > 0 || summary.Warn > 0) {
+	if !noRemediations && (summary.Fail > 0 || summary.Warn > 0) {
 		colors[check.WARN].Printf("== Remediations ==\n")
 		for _, g := range r.Groups {
 			for _, c := range g.Checks {
@@ -209,4 +213,10 @@ func multiWordReplace(s string, subname string, sub string) string {
 	}
 
 	return strings.Replace(s, subname, sub, -1)
+}
+
+func printRawOutput(output string) {
+	for _, row := range strings.Split(output, "\n") {
+		fmt.Println(fmt.Sprintf("\t %s", row))
+	}
 }

@@ -154,8 +154,7 @@ func (ts *Tests) Execute(s string) *testOutput {
 		}
 	}
 	finalOutput.TestResult = result
-	finalOutput.ActualResult = res[0].ActualResult
-
+	finalOutput.ActualResult = s
 	return finalOutput
 }
 
