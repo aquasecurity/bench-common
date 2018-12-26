@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	cfgFile        string
-	jsonFmt        bool
-	noRemediations bool
+	cfgFile           string
+	jsonFmt           bool
+	noRemediations    bool
+	includeTestOutput bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -51,6 +52,7 @@ func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	rootCmd.PersistentFlags().BoolVar(&jsonFmt, "json", false, "Prints the results as JSON")
 	rootCmd.PersistentFlags().BoolVar(&noRemediations, "noremediations", false, "Disable printing of remediations section")
+	rootCmd.PersistentFlags().BoolVar(&includeTestOutput, "include-test-output", false, "Prints the test's output")
 
 	goflag.CommandLine.VisitAll(func(goflag *goflag.Flag) {
 		rootCmd.PersistentFlags().AddGoFlag(goflag)
