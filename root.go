@@ -80,7 +80,8 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
+	// If the json flag is on, don't print the message because the output should be only in json format
+	if err := viper.ReadInConfig(); err == nil && !jsonFmt {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }
