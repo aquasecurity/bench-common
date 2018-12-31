@@ -43,14 +43,16 @@ type compare struct {
 }
 
 type testOutput struct {
-	TestResult   bool
-	ActualResult string
+	TestResult     bool
+	ActualResult   string
+	ExpectedResult string
 }
 
 func (t *testItem) execute(s string) *testOutput {
 	result := &testOutput{TestResult: false, ActualResult: ""}
-
+	expectedResultPattern := ""
 	s = strings.TrimRight(s, " \n")
+
 	if t.Set {
 		if t.Compare.Op != "" {
 			flagVal := getFlagValue(s, t.Flag)
@@ -58,6 +60,7 @@ func (t *testItem) execute(s string) *testOutput {
 
 			switch t.Compare.Op {
 			case "eq":
+				expectedResultPattern = "'%s' Is equal to '%s'"
 				value := strings.ToLower(flagVal)
 				// Do case insensitive comparaison for booleans ...
 				if value == "false" || value == "true" {
@@ -67,6 +70,7 @@ func (t *testItem) execute(s string) *testOutput {
 				}
 
 			case "noteq":
+				expectedResultPattern = "'%s' Is not equal to '%s'"
 				value := strings.ToLower(flagVal)
 				// Do case insensitive comparaison for booleans ...
 				if value == "false" || value == "true" {
@@ -76,39 +80,49 @@ func (t *testItem) execute(s string) *testOutput {
 				}
 
 			case "gt":
+				expectedResultPattern = "%s Is greater then %s"
 				a, b, err := toNumeric(flagVal, t.Compare.Value)
 				if err == nil {
 					result.TestResult = a > b
 				}
 
 			case "gte":
+				expectedResultPattern = "%s Is greater or equal to %s"
 				a, b, err := toNumeric(flagVal, t.Compare.Value)
 				if err == nil {
 					result.TestResult = a >= b
 				}
 
 			case "lt":
+				expectedResultPattern = "%s Is lower then %s"
 				a, b, err := toNumeric(flagVal, t.Compare.Value)
 				if err == nil {
 					result.TestResult = a < b
 				}
 
 			case "lte":
+				expectedResultPattern = "%s Is lower or equal to %s"
 				a, b, err := toNumeric(flagVal, t.Compare.Value)
 				if err == nil {
 					result.TestResult = a <= b
 				}
 
 			case "has":
+				expectedResultPattern = "'%s' Has '%s'"
 				result.TestResult = strings.Contains(flagVal, t.Compare.Value)
 
 			case "nothave":
+				expectedResultPattern = " '%s' Not have '%s'"
 				result.TestResult = !strings.Contains(flagVal, t.Compare.Value)
 			}
+
+			result.ExpectedResult = fmt.Sprintf(expectedResultPattern, t.Flag, t.Compare.Value)
 		} else {
+			result.ExpectedResult = fmt.Sprintf("'%s' Is present", t.Flag)
 			result.TestResult, _ = regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, s)
 		}
 	} else {
+		result.ExpectedResult = fmt.Sprintf("'%s' Is not present", t.Flag)
 		r, _ := regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, s)
 		result.TestResult = !r
 	}
@@ -146,13 +160,22 @@ func (ts *Tests) Execute(s string) *testOutput {
 		result = true
 		for i := range res {
 			result = result && res[i].TestResult
+			finalOutput.ExpectedResult += fmt.Sprintf("%s AND ", res[i].ExpectedResult)
 		}
+
+		// Delete last iteration ' AND '
+		finalOutput.ExpectedResult = finalOutput.ExpectedResult[:len(finalOutput.ExpectedResult)-5]
 	case or:
 		result = false
 		for i := range res {
 			result = result || res[i].TestResult
+			finalOutput.ExpectedResult += fmt.Sprintf("%s OR ", res[i].ExpectedResult)
 		}
+
+		// Delete last iteration ' OR '
+		finalOutput.ExpectedResult = finalOutput.ExpectedResult[:len(finalOutput.ExpectedResult)-4]
 	}
+
 	finalOutput.TestResult = result
 	finalOutput.ActualResult = s
 	return finalOutput
