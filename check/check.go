@@ -49,17 +49,18 @@ func handleError(err error, context string) (errmsg string) {
 
 // Check contains information about a recommendation.
 type Check struct {
-	ID          string           `yaml:"id" json:"test_number"`
-	Description string           `json:"test_desc"`
-	Audit       string           `json:"omit"`
-	Type        string           `json:"type"`
-	Commands    []*exec.Cmd      `json:"omit"`
-	Tests       *auditeval.Tests `json:"omit"`
-	Set         bool             `json:"omit"`
-	Remediation string           `json:"-"`
-	TestInfo    []string         `json:"test_info"`
-	State       `json:"status"`
-	ActualValue string `json:"actual_value"`
+	ID             string           `yaml:"id" json:"test_number"`
+	Description    string           `json:"test_desc"`
+	Audit          string           `json:"audit"`
+	Type           string           `json:"type"`
+	Commands       []*exec.Cmd      `json:"omit"`
+	Tests          *auditeval.Tests `json:"omit"`
+	Set            bool             `json:"omit"`
+	Remediation    string           `json:"-"`
+	TestInfo       []string         `json:"test_info"`
+	State          `json:"status"`
+	ActualValue    string `json:"actual_value"`
+	ExpectedResult string `json:"expected_result"`
 }
 
 // Group is a collection of similar checks.
@@ -165,6 +166,7 @@ func (c *Check) Run() {
 	finalOutput := c.Tests.Execute(out.String())
 	if finalOutput != nil {
 		c.ActualValue = finalOutput.ActualResult
+		c.ExpectedResult = finalOutput.ExpectedResult
 
 		if finalOutput.TestResult {
 			c.State = PASS
