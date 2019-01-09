@@ -102,7 +102,7 @@ func PrettyPrint(r *check.Controls, summary check.Summary, noRemediations, inclu
 	fmt.Println()
 
 	// Print remediations.
-	if !noRemediations && (summary.Fail > 0 || summary.Warn > 0) {
+	if !noRemediations && (summary.Fail > 0 || summary.Warn > 0 || summary.Info > 0) {
 		colors[check.WARN].Printf("== Remediations ==\n")
 		for _, g := range r.Groups {
 			for _, c := range g.Checks {
@@ -120,13 +120,15 @@ func PrettyPrint(r *check.Controls, summary check.Summary, noRemediations, inclu
 		res = check.FAIL
 	} else if summary.Warn > 0 {
 		res = check.WARN
+	} else if summary.Info > 0 {
+		res = check.INFO
 	} else {
 		res = check.PASS
 	}
 
 	colors[res].Printf("== Summary ==\n")
-	fmt.Printf("%d checks PASS\n%d checks FAIL\n%d checks WARN\n",
-		summary.Pass, summary.Fail, summary.Warn,
+	fmt.Printf("%d checks PASS\n%d checks FAIL\n%d checks WARN\n%d checks INFO\n",
+		summary.Pass, summary.Fail, summary.Warn, summary.Info,
 	)
 }
 

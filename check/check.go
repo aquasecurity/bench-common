@@ -71,6 +71,7 @@ type Group struct {
 	Pass        int      `json:"pass"`
 	Fail        int      `json:"fail"`
 	Warn        int      `json:"warn"`
+	Info        int      `json:"info"`
 }
 
 // Run executes the audit commands specified in a check and outputs
@@ -79,6 +80,11 @@ func (c *Check) Run() {
 	// If check type is manual, force result to WARN.
 	if c.Type == "manual" {
 		c.State = WARN
+		return
+	}
+
+	if c.Type == "skip" {
+		c.State = INFO
 		return
 	}
 

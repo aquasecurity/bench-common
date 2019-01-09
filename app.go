@@ -30,7 +30,7 @@ func app(cmd *cobra.Command, args []string) {
 
 func outputResults(controls *check.Controls, summary check.Summary) error {
 	// if we successfully ran some tests and it's json format, ignore the warnings
-	if (summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0) && jsonFmt {
+	if (summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0 || summary.Info > 0) && jsonFmt {
 		out, err := controls.JSON()
 		if err != nil {
 			return err
