@@ -68,10 +68,10 @@ type Group struct {
 	ID          string   `yaml:"id" json:"section"`
 	Description string   `json:"desc"`
 	Checks      []*Check `json:"results"`
-	Pass        int      `json:"pass"`
-	Fail        int      `json:"fail"`
-	Warn        int      `json:"warn"`
-	Info        int      `json:"info"`
+	Pass        int      `json:"pass"` // Tests with no type that passed
+	Fail        int      `json:"fail"` // Tests with no type that failed
+	Warn        int      `json:"warn"` // Tests of type manual won't be run and will be marked as Warn
+	Info        int      `json:"info"` // Tests of type skip won't be run and will be marked as Info
 }
 
 // Run executes the audit commands specified in a check and outputs
