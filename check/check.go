@@ -61,6 +61,7 @@ type Check struct {
 	State          `json:"status"`
 	ActualValue    string `json:"actual_value"`
 	ExpectedResult string `json:"expected_result"`
+	Scored         bool   `json:"scored"`
 }
 
 // Group is a collection of similar checks.
@@ -77,14 +78,15 @@ type Group struct {
 // Run executes the audit commands specified in a check and outputs
 // the results.
 func (c *Check) Run() {
-	// If check type is manual, force result to WARN.
-	if c.Type == "manual" {
-		c.State = WARN
-		return
-	}
 
 	if c.Type == "skip" {
 		c.State = INFO
+		return
+	}
+
+	// If check type is manual or the check is not scored, force result to WARN
+	if c.Type == "manual" || !c.Scored {
+		c.State = WARN
 		return
 	}
 
