@@ -47,15 +47,30 @@ func handleError(err error, context string) (errmsg string) {
 	return
 }
 
+// Old version - checks don't have sub checks, each check has only one sub check as part of the check itself
+type BaseCheck struct {
+	Audit       string              `json:"audit"`
+	Type        string              `json:"type"`
+	Commands    []*exec.Cmd         `json:"omit"`
+	Tests       *auditeval.Tests    `json:"omit"`
+	Remediation string              `json:"-"`
+	Constraints map[string][]string `yaml:"constraints"`
+}
+
+type SubCheck struct {
+	BaseCheck `yaml:"check"`
+}
+
 // Check contains information about a recommendation.
 type Check struct {
 	ID             string           `yaml:"id" json:"test_number"`
 	Description    string           `json:"test_desc"`
+	Set            bool             `json:"omit"`
+	SubChecks      []SubCheck       `yaml:"sub_checks"`
 	Audit          string           `json:"audit"`
 	Type           string           `json:"type"`
 	Commands       []*exec.Cmd      `json:"omit"`
 	Tests          *auditeval.Tests `json:"omit"`
-	Set            bool             `json:"omit"`
 	Remediation    string           `json:"-"`
 	TestInfo       []string         `json:"test_info"`
 	State          `json:"status"`
@@ -77,101 +92,41 @@ type Group struct {
 
 // Run executes the audit commands specified in a check and outputs
 // the results.
-func (c *Check) Run() {
+func (c *Check) Run(definedConstraints map[string][]string) {
+	var subCheck *BaseCheck
+	if c.SubChecks == nil {
+		subCheck = &BaseCheck{
+			Commands:    c.Commands,
+			Tests:       c.Tests,
+			Type:        c.Type,
+			Audit:       c.Audit,
+			Remediation: c.Remediation,
+		}
+	} else {
+		subCheck = getFirstValidSubCheck(c.SubChecks, definedConstraints)
 
-	if c.Type == "skip" {
-		c.State = INFO
-		return
-	}
-
-	// If check type is manual or the check is not scored, force result to WARN
-	if c.Type == "manual" || !c.Scored {
-		c.State = WARN
-		return
+		if subCheck == nil {
+			c.State = WARN
+			glog.V(1).Info("Failed to find a valid sub check, check ", c.ID)
+			return
+		}
 	}
 
 	var out bytes.Buffer
 	var errmsgs string
 
-	// Check if command exists or exit with WARN.
-	for _, cmd := range c.Commands {
-		if !isShellCommand(cmd.Path) {
-			glog.V(1).Infof("%s: command not found", cmd.Path)
-			c.State = WARN
-			return
-		}
-	}
-
-	// Run commands.
-	n := len(c.Commands)
-	if n == 0 {
-		// Likely a warning message.
-		c.State = WARN
-		return
-	}
-
-	// Each command runs,
-	//   cmd0 out -> cmd1 in, cmd1 out -> cmd2 in ... cmdn out -> os.stdout
-	//   cmd0 err should terminate chain
-	cs := c.Commands
-
-	// Initialize command pipeline
-	cs[n-1].Stdout = &out
-	i := 1
-
-	var err error
-	errmsgs = ""
-
-	for i < n {
-		cs[i-1].Stdout, err = cs[i].StdinPipe()
-		errmsgs += handleError(
-			err,
-			fmt.Sprintf("failed to run: %s\nfailed command: %s",
-				c.Audit,
-				cs[i].Args,
-			),
-		)
-		i++
-	}
-
-	// Start command pipeline
-	i = 0
-	for i < n {
-		err := cs[i].Start()
-		errmsgs += handleError(
-			err,
-			fmt.Sprintf("failed to run: %s\nfailed command: %s",
-				c.Audit,
-				cs[i].Args,
-			),
-		)
-		i++
-	}
-
-	// Complete command pipeline
-	i = 0
-	for i < n {
-		err := cs[i].Wait()
-		errmsgs += handleError(
-			err,
-			fmt.Sprintf("failed to run: %s\nfailed command:%s",
-				c.Audit,
-				cs[i].Args,
-			),
-		)
-
-		if i < n-1 {
-			cs[i].Stdout.(io.Closer).Close()
-		}
-
-		i++
-	}
+	out, errmsgs, c.State = runAuditCommands(*subCheck)
 
 	if errmsgs != "" {
 		glog.V(2).Info(errmsgs)
 	}
 
-	finalOutput := c.Tests.Execute(out.String())
+	if c.State != "" {
+		return
+	}
+
+	finalOutput := subCheck.Tests.Execute(out.String())
+
 	if finalOutput != nil {
 		c.ActualValue = finalOutput.ActualResult
 		c.ExpectedResult = finalOutput.ExpectedResult
@@ -245,5 +200,142 @@ func isShellCommand(s string) bool {
 	if strings.Contains(string(out), s) {
 		return true
 	}
+	return false
+}
+
+func runAuditCommands(c BaseCheck) (out bytes.Buffer, errmsgs string, state State) {
+
+	// If check type is manual, force result to WARN.
+	if c.Type == "manual" {
+		return out, errmsgs, WARN
+	}
+
+	if c.Type == "skip" {
+		return out, errmsgs, INFO
+	}
+
+	// Check if command exists or exit with WARN.
+	for _, cmd := range c.Commands {
+		if !isShellCommand(cmd.Path) {
+			glog.V(1).Infof("%s: command not found", cmd.Path)
+			return out, errmsgs, WARN
+		}
+	}
+
+	// Run commands.
+	n := len(c.Commands)
+	if n == 0 {
+		// Likely a warning message.
+		return out, errmsgs, WARN
+	}
+
+	// Each command runs,
+	//   cmd0 out -> cmd1 in, cmd1 out -> cmd2 in ... cmdn out -> os.stdout
+	//   cmd0 err should terminate chain
+	cs := c.Commands
+
+	// Initialize command pipeline
+	cs[n-1].Stdout = &out
+	i := 1
+
+	var err error
+	errmsgs = ""
+
+	for i < n {
+		cs[i-1].Stdout, err = cs[i].StdinPipe()
+		errmsgs += handleError(
+			err,
+			fmt.Sprintf("failed to run: %s\nfailed command: %s",
+				c.Audit,
+				cs[i].Args,
+			),
+		)
+		i++
+	}
+
+	// Start command pipeline
+	i = 0
+	for i < n {
+		err := cs[i].Start()
+		errmsgs += handleError(
+			err,
+			fmt.Sprintf("failed to run: %s\nfailed command: %s",
+				c.Audit,
+				cs[i].Args,
+			),
+		)
+		i++
+	}
+
+	// Complete command pipeline
+	i = 0
+	for i < n {
+		err := cs[i].Wait()
+		errmsgs += handleError(
+			err,
+			fmt.Sprintf("failed to run: %s\nfailed command:%s",
+				c.Audit,
+				cs[i].Args,
+			),
+		)
+
+		if i < n-1 {
+			cs[i].Stdout.(io.Closer).Close()
+		}
+
+		i++
+	}
+
+	// If the test actually ran
+	return out, errmsgs, ""
+}
+
+func getFirstValidSubCheck(subChecks []SubCheck, definedConstraints map[string][]string) (subCheck *BaseCheck) {
+	for _, sc := range subChecks {
+		isSubCheckOk := true
+
+		for testConstraintKey, testConstraintVals := range sc.Constraints {
+
+			isSubCheckOk = isSubCheckCompatible(testConstraintKey, testConstraintVals, definedConstraints)
+
+			// If the sub check is not compatible with the constraints, move to the next one
+			if !isSubCheckOk {
+				break
+			}
+		}
+
+		if isSubCheckOk {
+			return &sc.BaseCheck
+		}
+	}
+
+	return nil
+}
+
+func isSubCheckCompatible(testConstraintKey string, testConstraintVals []string, definedConstraints map[string][]string) bool {
+	definedConstraintsVals := definedConstraints[testConstraintKey]
+
+	// If the constraint's key is not defined - the check is not compatible
+	if !(len(definedConstraintsVals) > 0) {
+		return false
+	}
+
+	// For each constraint of the check under the specific key, check if its defined
+	for _, val := range testConstraintVals {
+		if !contains(definedConstraintsVals, val) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func contains(arr []string, obj string) bool {
+	for _, val := range arr {
+		if val == obj {
+			return true
+		}
+	}
+
 	return false
 }

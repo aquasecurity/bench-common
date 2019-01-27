@@ -16,7 +16,11 @@ func app(cmd *cobra.Command, args []string) {
 		util.ExitWithError(err)
 	}
 
-	controls, err := getControls(cfgFile)
+	Main(cfgFile, define)
+}
+
+func Main(filePath string, constraints []string) {
+	controls, err := getControls(filePath, constraints)
 	if err != nil {
 		util.ExitWithError(err)
 	}
@@ -56,13 +60,13 @@ func runControls(controls *check.Controls, checkList string) check.Summary {
 	return summary
 }
 
-func getControls(path string) (*check.Controls, error) {
+func getControls(path string, constraints []string) (*check.Controls, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	controls, err := check.NewControls([]byte(data))
+	controls, err := check.NewControls([]byte(data), constraints)
 	if err != nil {
 		return nil, err
 	}
