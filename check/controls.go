@@ -17,6 +17,8 @@ package check
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/golang/glog"
+	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -27,6 +29,7 @@ type Controls struct {
 	Description string   `json:"text"`
 	Groups      []*Group `json:"tests"`
 	Summary
+	DefinedConstraints map[string][]string
 }
 
 // Summary is a summary of the results of control checks run.
@@ -38,7 +41,7 @@ type Summary struct {
 }
 
 // NewControls instantiates a new master Controls object.
-func NewControls(in []byte) (*Controls, error) {
+func NewControls(in []byte, definitions []string) (*Controls, error) {
 	c := new(Controls)
 
 	err := yaml.Unmarshal(in, c)
@@ -49,7 +52,27 @@ func NewControls(in []byte) (*Controls, error) {
 	// Prepare audit commands
 	for _, group := range c.Groups {
 		for _, check := range group.Checks {
-			check.Commands = textToCommand(check.Audit)
+			if check.SubChecks == nil {
+				check.Commands = textToCommand(check.Audit)
+			} else {
+				for i, SubCheck := range check.SubChecks {
+					check.SubChecks[i].Commands = textToCommand(SubCheck.Audit)
+				}
+			}
+		}
+	}
+
+	if len(definitions) > 0 {
+		c.DefinedConstraints = map[string][]string{}
+		for _, val := range definitions {
+			a := strings.Split(val, "=")
+
+			// If its type 'category=value' for example 'platform=ubuntu'
+			if len(a) == 2 && a[0] != "" && a[1] != "" {
+				c.DefinedConstraints[a[0]] = append(c.DefinedConstraints[a[0]], a[1])
+			} else {
+				glog.V(1).Info("failed to parse defined constraint, ", val)
+			}
 		}
 	}
 
@@ -70,7 +93,7 @@ func (controls *Controls) RunGroup(gids ...string) Summary {
 		for _, gid := range gids {
 			if gid == group.ID {
 				for _, check := range group.Checks {
-					check.Run()
+					check.Run(controls.DefinedConstraints)
 					check.TestInfo = append(check.TestInfo, check.Remediation)
 					summarize(controls, check)
 					summarizeGroup(group, check)
@@ -101,7 +124,7 @@ func (controls *Controls) RunChecks(ids ...string) Summary {
 		for _, check := range group.Checks {
 			for _, id := range ids {
 				if id == check.ID {
-					check.Run()
+					check.Run(controls.DefinedConstraints)
 					check.TestInfo = append(check.TestInfo, check.Remediation)
 					summarize(controls, check)
 

@@ -39,10 +39,27 @@ groups:
           set: true
       remediation: "Edit the $apiserverconf file on the master node and set 
               the KUBE_ALLOW_PRIV parameter to \"--allow-privileged=false\""
-      scored: true`
+      scored: true
+    - id: 1.1.2
+      text: "Ensure that the --allow-privileged argument is set to false (Scored)"
+      sub_checks:
+      - check:
+        audit: "ps -ef | grep $apiserverbin | grep -v grep"
+        tests:
+          test_items:
+          - flag: "allow-privileged"
+            compare:
+              op: eq
+              value: false
+            set: true			  
+      remediation: "Make it work"
+      scored: true
+`
+
+var definedTestConstraints = []string{"platform=ubuntu", "platform=rhel", "boot=grub"}
 
 func TestRunGroup(t *testing.T) {
-	c, err := NewControls([]byte(def))
+	c, err := NewControls([]byte(def), definedTestConstraints)
 	if err != nil {
 		t.Fatalf("could not create control object: %s", err)
 	}
@@ -52,7 +69,7 @@ func TestRunGroup(t *testing.T) {
 
 // TODO: make this test useful as of now it never fails.
 func TestRunChecks(t *testing.T) {
-	c, err := NewControls([]byte(def))
+	c, err := NewControls([]byte(def), definedTestConstraints)
 	if err != nil {
 		t.Fatalf("could not create control object: %s", err)
 	}
@@ -61,31 +78,35 @@ func TestRunChecks(t *testing.T) {
 }
 
 func TestSummarizeGroup(t *testing.T) {
-		type TestCase struct {
-			state State
-			group Group
-			check Check
-			Expected int
-		}
-		var actual int
+	type TestCase struct {
+		state    State
+		group    Group
+		check    Check
+		Expected int
+	}
+	var actual int
 
-		testCases := []TestCase{
-			{group:Group{},  check:Check{State: "PASS"}, Expected: 1},
-			{group:Group{},  check:Check{State: "FAIL"}, Expected: 1},
-			{group:Group{},  check:Check{State: "WARN"}, Expected: 1},
+	testCases := []TestCase{
+		{group: Group{}, check: Check{State: "PASS"}, Expected: 1},
+		{group: Group{}, check: Check{State: "FAIL"}, Expected: 1},
+		{group: Group{}, check: Check{State: "WARN"}, Expected: 1},
+		{group: Group{}, check: Check{State: "INFO"}, Expected: 1},
+	}
+	for i, test := range testCases {
+		summarizeGroup(&test.group, &test.check)
+		switch test.check.State {
+		case "PASS":
+			actual = test.group.Pass
+		case "FAIL":
+			actual = test.group.Fail
+		case "WARN":
+			actual = test.group.Warn
+		case INFO:
+			actual = test.group.Info
 		}
-		for i, test := range testCases {
-			summarizeGroup(&test.group, &test.check)
-			switch test.check.State {
-				case "PASS":
-					actual = test.group.Pass
-				case "FAIL":
-					actual = test.group.Fail
-				case "WARN":
-					actual = test.group.Warn
-			}
-			if actual != test.Expected {
-				t.Errorf("test %d fail: expected: %v actual: %v\ntest details: %+v\n", i, test.Expected, actual, test)
-			}
+
+		if actual != test.Expected {
+			t.Errorf("test %d fail: expected: %v actual: %v\ntest details: %+v\n", i, test.Expected, actual, test)
 		}
+	}
 }
