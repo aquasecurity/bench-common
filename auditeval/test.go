@@ -48,84 +48,27 @@ type testOutput struct {
 	ExpectedResult string
 }
 
-func (t *testItem) execute(s string) *testOutput {
+func (t *testItem) execute(s string, isMultipleOutput bool) *testOutput {
 	result := &testOutput{TestResult: false, ActualResult: ""}
-	expectedResultPattern := ""
 	s = strings.TrimRight(s, " \n")
 
-	if t.Set {
-		if t.Compare.Op != "" {
-			flagVal := getFlagValue(s, t.Flag)
-			result.ActualResult = strings.ToLower(flagVal)
+	// If the test has output that should be evaluated for each row
+	// For example - checking that no container is in privileged mode - docker ps and than checking for each container
+	if isMultipleOutput {
+		output := strings.Split(s, "\n")
 
-			switch t.Compare.Op {
-			case "eq":
-				expectedResultPattern = "'%s' Is equal to '%s'"
-				value := strings.ToLower(flagVal)
-				// Do case insensitive comparaison for booleans ...
-				if value == "false" || value == "true" {
-					result.TestResult = value == t.Compare.Value
-				} else {
-					result.TestResult = flagVal == t.Compare.Value
-				}
+		for _, op := range output {
+			result.TestResult, result.ExpectedResult = t.evaluate(op)
 
-			case "noteq":
-				expectedResultPattern = "'%s' Is not equal to '%s'"
-				value := strings.ToLower(flagVal)
-				// Do case insensitive comparaison for booleans ...
-				if value == "false" || value == "true" {
-					result.TestResult = !(value == t.Compare.Value)
-				} else {
-					result.TestResult = !(flagVal == t.Compare.Value)
-				}
-
-			case "gt":
-				expectedResultPattern = "%s Is greater then %s"
-				a, b, err := toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					result.TestResult = a > b
-				}
-
-			case "gte":
-				expectedResultPattern = "%s Is greater or equal to %s"
-				a, b, err := toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					result.TestResult = a >= b
-				}
-
-			case "lt":
-				expectedResultPattern = "%s Is lower then %s"
-				a, b, err := toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					result.TestResult = a < b
-				}
-
-			case "lte":
-				expectedResultPattern = "%s Is lower or equal to %s"
-				a, b, err := toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					result.TestResult = a <= b
-				}
-
-			case "has":
-				expectedResultPattern = "'%s' Has '%s'"
-				result.TestResult = strings.Contains(flagVal, t.Compare.Value)
-
-			case "nothave":
-				expectedResultPattern = " '%s' Not have '%s'"
-				result.TestResult = !strings.Contains(flagVal, t.Compare.Value)
+			// If the test failed for the current row, no need to keep testing for this output
+			if !result.TestResult {
+				break
 			}
-
-			result.ExpectedResult = fmt.Sprintf(expectedResultPattern, t.Flag, t.Compare.Value)
-		} else {
-			result.ExpectedResult = fmt.Sprintf("'%s' Is present", t.Flag)
-			result.TestResult, _ = regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, s)
 		}
 	} else {
-		result.ExpectedResult = fmt.Sprintf("'%s' Is not present", t.Flag)
-		r, _ := regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, s)
-		result.TestResult = !r
+		result.TestResult, result.ExpectedResult = t.evaluate(s)
 	}
+
 	return result
 }
 
@@ -135,7 +78,7 @@ type Tests struct {
 	BinOp     binOp       `yaml:"bin_op"`
 }
 
-func (ts *Tests) Execute(s string) *testOutput {
+func (ts *Tests) Execute(s string, isMultipleOutput bool) *testOutput {
 	finalOutput := &testOutput{}
 	var result bool
 	if ts == nil {
@@ -148,7 +91,7 @@ func (ts *Tests) Execute(s string) *testOutput {
 	}
 
 	for i, t := range ts.TestItems {
-		res[i] = *(t.execute(s))
+		res[i] = *(t.execute(s, isMultipleOutput))
 	}
 
 	// If no binary operation is specified, default to AND
@@ -220,4 +163,83 @@ func getFlagValue(s, flag string) string {
 		}
 	}
 	return flagVal
+}
+
+func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult string) {
+
+	if t.Set {
+		if t.Compare.Op != "" {
+			flagVal := getFlagValue(output, t.Flag)
+			expectedResultPattern := ""
+
+			switch t.Compare.Op {
+			case "eq":
+				expectedResultPattern = "'%s' Is equal to '%s'"
+				value := strings.ToLower(flagVal)
+				// Do case insensitive comparaison for booleans ...
+				if value == "false" || value == "true" {
+					TestResult = value == t.Compare.Value
+				} else {
+					TestResult = flagVal == t.Compare.Value
+				}
+
+			case "noteq":
+				expectedResultPattern = "'%s' Is not equal to '%s'"
+				value := strings.ToLower(flagVal)
+				// Do case insensitive comparaison for booleans ...
+				if value == "false" || value == "true" {
+					TestResult = !(value == t.Compare.Value)
+				} else {
+					TestResult = !(flagVal == t.Compare.Value)
+				}
+
+			case "gt":
+				expectedResultPattern = "%s Is greater then %s"
+				a, b, err := toNumeric(flagVal, t.Compare.Value)
+				if err == nil {
+					TestResult = a > b
+				}
+
+			case "gte":
+				expectedResultPattern = "%s Is greater or equal to %s"
+				a, b, err := toNumeric(flagVal, t.Compare.Value)
+				if err == nil {
+					TestResult = a >= b
+				}
+
+			case "lt":
+				expectedResultPattern = "%s Is lower then %s"
+				a, b, err := toNumeric(flagVal, t.Compare.Value)
+				if err == nil {
+					TestResult = a < b
+				}
+
+			case "lte":
+				expectedResultPattern = "%s Is lower or equal to %s"
+				a, b, err := toNumeric(flagVal, t.Compare.Value)
+				if err == nil {
+					TestResult = a <= b
+				}
+
+			case "has":
+				expectedResultPattern = "'%s' Has '%s'"
+				TestResult = strings.Contains(flagVal, t.Compare.Value)
+
+			case "nothave":
+				expectedResultPattern = " '%s' Not have '%s'"
+				TestResult = !strings.Contains(flagVal, t.Compare.Value)
+			}
+
+			ExpectedResult = fmt.Sprintf(expectedResultPattern, t.Flag, t.Compare.Value)
+		} else {
+			ExpectedResult = fmt.Sprintf("'%s' Is present", t.Flag)
+			TestResult, _ = regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, output)
+		}
+	} else {
+		ExpectedResult = fmt.Sprintf("'%s' Is not present", t.Flag)
+		r, _ := regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, output)
+		TestResult = !r
+	}
+
+	return TestResult, ExpectedResult
 }
