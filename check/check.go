@@ -77,6 +77,7 @@ type Check struct {
 	ActualValue    string `json:"actual_value"`
 	ExpectedResult string `json:"expected_result"`
 	Scored         bool   `json:"scored"`
+	IsMultiple     bool   `yaml:"use_multiple_values"`
 }
 
 // Group is a collection of similar checks.
@@ -125,7 +126,7 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 		return
 	}
 
-	finalOutput := subCheck.Tests.Execute(out.String())
+	finalOutput := subCheck.Tests.Execute(out.String(), c.IsMultiple)
 
 	if finalOutput != nil {
 		c.ActualValue = finalOutput.ActualResult
