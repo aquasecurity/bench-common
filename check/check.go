@@ -94,6 +94,18 @@ type Group struct {
 // Run executes the audit commands specified in a check and outputs
 // the results.
 func (c *Check) Run(definedConstraints map[string][]string) {
+	// If check type is skip, force result to INFO
+	if c.Type == "skip" {
+		c.State = INFO
+		return
+	}
+
+	//If check type is manual or the check is not scored, force result to WARN
+	if c.Type == "manual" || !c.Scored {
+		c.State = WARN
+		return
+	}
+
 	var subCheck *BaseCheck
 	if c.SubChecks == nil {
 		subCheck = &BaseCheck{
