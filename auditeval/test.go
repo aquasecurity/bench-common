@@ -143,6 +143,10 @@ func toNumeric(a, b string) (c, d int, err error) {
 }
 
 func getFlagValue(s, flag string) string {
+	if flag == "" {
+		return s
+	}
+
 	var flagVal string
 	pttns := []string{
 		flag + `=([^ \n]*)`,
