@@ -138,7 +138,7 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 		return
 	}
 
-	finalOutput := subCheck.Tests.Execute(out.String(), c.IsMultiple)
+	finalOutput := subCheck.Tests.Execute(out.String(), c.ID, c.IsMultiple)
 
 	if finalOutput != nil {
 		c.ActualValue = finalOutput.ActualResult

@@ -69,8 +69,8 @@ func TestTestExecute(t *testing.T) {
 		{"The cow jumped over the moon", false},
 	}
 
-	for _, c := range cases {
-		res := ts.Execute(c.str, false)
+	for i, c := range cases {
+		res := ts.Execute(c.str, string(i), false)
 		if res.TestResult != c.want {
 			t.Errorf("expected:%v, got:%v\n", c.want, res)
 		}
@@ -123,15 +123,15 @@ func Test_ExecuteMultipleOutput(t *testing.T) {
 	}
 
 	cases := []struct {
-		auditCommandOutput  string
-		expectedResult bool
-		testWithMultiple bool
+		auditCommandOutput string
+		expectedResult     bool
+		testWithMultiple   bool
 	}{
 		// If the use_multiple_values is not set, test should pass on first container (The bug)
 		{`b24f2b421ec7742ad6417263c34fcc1086e83ca6b9d4f759ff8671a0f9fc68ac: User=Pass
 			9bf99c968c5a96c9d7913609867deffce0d59b90429a7e6a584485eec69067d1: User=
 			af1072975e9e129489a75b9aa3cac7cc613bda4901e0ca2369366a7297d3e3ca: User=`,
-		true, false,
+			true, false,
 		},
 		// If the use_multiple_values is not set, test should fail on first container
 		{`b24f2b421ec7742ad6417263c34fcc1086e83ca6b9d4f759ff8671a0f9fc68ac: User=
@@ -159,8 +159,8 @@ func Test_ExecuteMultipleOutput(t *testing.T) {
 		},
 	}
 
-	for _, c := range cases {
-		res := ts.Execute(c.auditCommandOutput, c.testWithMultiple)
+	for i, c := range cases {
+		res := ts.Execute(c.auditCommandOutput, string(i), c.testWithMultiple)
 		if res.TestResult != c.expectedResult {
 			t.Errorf("expected:%v, got:%v\n", c.expectedResult, res.TestResult)
 		}
