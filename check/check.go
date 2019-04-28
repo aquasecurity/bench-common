@@ -15,9 +15,7 @@
 package check
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -125,8 +123,7 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 		}
 	}
 
-	var out bytes.Buffer
-	var errmsgs string
+	var out, errmsgs string
 
 	out, errmsgs, c.State = runAuditCommands(*subCheck)
 
@@ -138,7 +135,7 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 		return
 	}
 
-	finalOutput := subCheck.Tests.Execute(out.String(), c.ID, c.IsMultiple)
+	finalOutput := subCheck.Tests.Execute(out, c.ID, c.IsMultiple)
 
 	if finalOutput != nil {
 		c.ActualValue = finalOutput.ActualResult
@@ -216,22 +213,22 @@ func isShellCommand(s string) bool {
 	return false
 }
 
-func runAuditCommands(c BaseCheck) (out bytes.Buffer, errmsgs string, state State) {
+func runAuditCommands(c BaseCheck) (output, errMessage string, state State) {
 
 	// If check type is manual, force result to WARN.
 	if c.Type == "manual" {
-		return out, errmsgs, WARN
+		return output, errMessage, WARN
 	}
 
 	if c.Type == "skip" {
-		return out, errmsgs, INFO
+		return output, errMessage, INFO
 	}
 
 	// Check if command exists or exit with WARN.
 	for _, cmd := range c.Commands {
 		if !isShellCommand(cmd.Path) {
 			glog.V(1).Infof("%s: command not found", cmd.Path)
-			return out, errmsgs, WARN
+			return output, errMessage, WARN
 		}
 	}
 
@@ -239,68 +236,18 @@ func runAuditCommands(c BaseCheck) (out bytes.Buffer, errmsgs string, state Stat
 	n := len(c.Commands)
 	if n == 0 {
 		// Likely a warning message.
-		return out, errmsgs, WARN
+		return output, errMessage, WARN
 	}
 
-	// Each command runs,
-	//   cmd0 out -> cmd1 in, cmd1 out -> cmd2 in ... cmdn out -> os.stdout
-	//   cmd0 err should terminate chain
-	cs := c.Commands
+	out, err := exec.Command("sh", "-c", c.Audit).Output()
 
-	// Initialize command pipeline
-	cs[n-1].Stdout = &out
-	i := 1
-
-	var err error
-	errmsgs = ""
-
-	for i < n {
-		cs[i-1].Stdout, err = cs[i].StdinPipe()
-		errmsgs += handleError(
-			err,
-			fmt.Sprintf("failed to run: %s\nfailed command: %s",
-				c.Audit,
-				cs[i].Args,
-			),
-		)
-		i++
+	if err != nil {
+		errMessage = err.Error()
 	}
 
-	// Start command pipeline
-	i = 0
-	for i < n {
-		err := cs[i].Start()
-		errmsgs += handleError(
-			err,
-			fmt.Sprintf("failed to run: %s\nfailed command: %s",
-				c.Audit,
-				cs[i].Args,
-			),
-		)
-		i++
-	}
+	output = string(out)
 
-	// Complete command pipeline
-	i = 0
-	for i < n {
-		err := cs[i].Wait()
-		errmsgs += handleError(
-			err,
-			fmt.Sprintf("failed to run: %s\nfailed command:%s",
-				c.Audit,
-				cs[i].Args,
-			),
-		)
-
-		if i < n-1 {
-			cs[i].Stdout.(io.Closer).Close()
-		}
-
-		i++
-	}
-
-	// If the test actually ran
-	return out, errmsgs, ""
+	return output, errMessage, ""
 }
 
 func getFirstValidSubCheck(subChecks []SubCheck, definedConstraints map[string][]string) (subCheck *BaseCheck) {
