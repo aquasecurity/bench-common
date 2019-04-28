@@ -16,6 +16,7 @@ package auditeval
 
 import (
 	"fmt"
+	"github.com/golang/glog"
 	"os"
 	"regexp"
 	"strconv"
@@ -48,8 +49,7 @@ type testOutput struct {
 	ExpectedResult string
 }
 
-func (t *testItem) execute(s string, isMultipleOutput bool) *testOutput {
-	result := &testOutput{TestResult: false, ActualResult: ""}
+func (t *testItem) execute(s string, isMultipleOutput bool) (result testOutput, err error) {
 	s = strings.TrimRight(s, " \n")
 
 	// If the test has output that should be evaluated for each row
@@ -58,7 +58,7 @@ func (t *testItem) execute(s string, isMultipleOutput bool) *testOutput {
 		output := strings.Split(s, "\n")
 
 		for _, op := range output {
-			result.TestResult, result.ExpectedResult = t.evaluate(op)
+			result.TestResult, result.ExpectedResult, err = t.evaluate(op)
 
 			// If the test failed for the current row, no need to keep testing for this output
 			if !result.TestResult {
@@ -66,10 +66,10 @@ func (t *testItem) execute(s string, isMultipleOutput bool) *testOutput {
 			}
 		}
 	} else {
-		result.TestResult, result.ExpectedResult = t.evaluate(s)
+		result.TestResult, result.ExpectedResult, err = t.evaluate(s)
 	}
 
-	return result
+	return result, err
 }
 
 // Tests combine test items with binary operations to evaluate results.
@@ -78,9 +78,11 @@ type Tests struct {
 	BinOp     binOp       `yaml:"bin_op"`
 }
 
-func (ts *Tests) Execute(s string, isMultipleOutput bool) *testOutput {
+func (ts *Tests) Execute(s, testId string, isMultipleOutput bool) *testOutput {
 	finalOutput := &testOutput{}
 	var result bool
+	var err error
+
 	if ts == nil {
 		return finalOutput
 	}
@@ -91,7 +93,10 @@ func (ts *Tests) Execute(s string, isMultipleOutput bool) *testOutput {
 	}
 
 	for i, t := range ts.TestItems {
-		res[i] = *(t.execute(s, isMultipleOutput))
+		res[i], err = t.execute(s, isMultipleOutput)
+		if err != nil {
+			glog.V(2).Infof("Failed running test %s. %s", testId, err)
+		}
 	}
 
 	// If no binary operation is specified, default to AND
@@ -126,20 +131,20 @@ func (ts *Tests) Execute(s string, isMultipleOutput bool) *testOutput {
 
 func toNumeric(a, b string) (c, d int, err error) {
 	if len(a) == 0 || len(b) == 0 {
-		return -1, -1, fmt.Errorf("Cannot convert blank value to numeric")
+		return -1, -1, fmt.Errorf("cannot convert blank value to numeric")
 	}
 	c, err = strconv.Atoi(a)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error converting %s: %s\n", a, err)
-		os.Exit(1)
+		return c, d, fmt.Errorf("failed converting %s to integer, %s", a, err)
 	}
 	d, err = strconv.Atoi(b)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error converting %s: %s\n", b, err)
-		os.Exit(1)
+		if err != nil {
+			return c, d, fmt.Errorf("failed converting %s to integer, %s", b, err)
+		}
 	}
 
-	return c, d, err
+	return c, d, nil
 }
 
 func getFlagValue(s, flag string) string {
@@ -169,18 +174,19 @@ func getFlagValue(s, flag string) string {
 	return flagVal
 }
 
-func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult string) {
+func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult string, err error) {
 
 	if t.Set {
 		if t.Compare.Op != "" {
 			flagVal := getFlagValue(output, t.Flag)
 			expectedResultPattern := ""
+			var a, b int
 
 			switch t.Compare.Op {
 			case "eq":
 				expectedResultPattern = "'%s' Is equal to '%s'"
 				value := strings.ToLower(flagVal)
-				// Do case insensitive comparaison for booleans ...
+				// Do case insensitive comparison for booleans ...
 				if value == "false" || value == "true" {
 					TestResult = value == t.Compare.Value
 				} else {
@@ -199,28 +205,28 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 
 			case "gt":
 				expectedResultPattern = "%s Is greater then %s"
-				a, b, err := toNumeric(flagVal, t.Compare.Value)
+				a, b, err = toNumeric(flagVal, t.Compare.Value)
 				if err == nil {
 					TestResult = a > b
 				}
 
 			case "gte":
 				expectedResultPattern = "%s Is greater or equal to %s"
-				a, b, err := toNumeric(flagVal, t.Compare.Value)
+				a, b, err = toNumeric(flagVal, t.Compare.Value)
 				if err == nil {
 					TestResult = a >= b
 				}
 
 			case "lt":
 				expectedResultPattern = "%s Is lower then %s"
-				a, b, err := toNumeric(flagVal, t.Compare.Value)
+				a, b, err = toNumeric(flagVal, t.Compare.Value)
 				if err == nil {
 					TestResult = a < b
 				}
 
 			case "lte":
 				expectedResultPattern = "%s Is lower or equal to %s"
-				a, b, err := toNumeric(flagVal, t.Compare.Value)
+				a, b, err = toNumeric(flagVal, t.Compare.Value)
 				if err == nil {
 					TestResult = a <= b
 				}
@@ -245,5 +251,5 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 		TestResult = !r
 	}
 
-	return TestResult, ExpectedResult
+	return TestResult, ExpectedResult, err
 }
