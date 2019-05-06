@@ -154,6 +154,7 @@ func getFlagValue(s, flag string) string {
 
 	var flagVal string
 	pttns := []string{
+		flag + `="(.*)"`,
 		flag + `=([^ \n]*)`,
 		flag + ` +([^- ]+)`,
 		`(?:^| +)` + `(` + flag + `)` + `(?: |$)`,

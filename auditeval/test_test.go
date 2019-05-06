@@ -15,6 +15,7 @@
 package auditeval
 
 import (
+	"fmt"
 	"testing"
 
 	yaml "gopkg.in/yaml.v2"
@@ -98,13 +99,17 @@ func Test_getFlagValue(t *testing.T) {
 		{Input: "CCC XXX AAA BBB", Flag: "XXX", Expected: "AAA"},
 		{Input: "YXXX", Flag: "XXX", Expected: ""},
 		{Input: "XXXY", Flag: "XXX", Expected: ""},
+		{Input: "XXX: User=\"AAA BBB TEST\"", Flag: "User", Expected: "AAA BBB TEST"},
 	}
 
 	for i, test := range tests {
-		actual := getFlagValue(test.Input, test.Flag)
-		if test.Expected != actual {
-			t.Errorf("test %d fail: expected: %v actual: %v\ntest details: %+v\n", i, test.Expected, actual, test)
-		}
+
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			actual := getFlagValue(test.Input, test.Flag)
+			if test.Expected != actual {
+				t.Errorf("test %d fail: expected: %v actual: %v\ntest details: %+v\n", i, test.Expected, actual, test)
+			}
+		})
 	}
 }
 
