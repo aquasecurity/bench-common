@@ -15,6 +15,7 @@
 package util
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -220,5 +221,29 @@ func multiWordReplace(s string, subname string, sub string) string {
 func printRawOutput(output string) {
 	for _, row := range strings.Split(output, "\n") {
 		fmt.Println(fmt.Sprintf("\t %s", row))
+	}
+}
+
+func writeOutputToFile(output string, outputFile string) error {
+	file, err := os.Create(outputFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	w := bufio.NewWriter(file)
+	fmt.Fprintln(w, output)
+	return w.Flush()
+}
+
+func PrintOutput(output string, outputFile string) {
+	if len(outputFile) == 0 {
+		fmt.Println(output)
+	} else {
+		err := writeOutputToFile(output, outputFile)
+		if err != nil {
+			s := fmt.Sprintf("Failed to write to output file %s", outputFile)
+			continueWithError(err, sprintlnWarn(s))
+		}
 	}
 }
