@@ -15,6 +15,7 @@ var (
 	jsonFmt           bool
 	noRemediations    bool
 	includeTestOutput bool
+	outputFile        string
 	define            []string
 )
 
@@ -55,6 +56,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&jsonFmt, "json", false, "Prints the results as JSON")
 	rootCmd.PersistentFlags().BoolVar(&noRemediations, "noremediations", false, "Disable printing of remediations section")
 	rootCmd.PersistentFlags().BoolVar(&includeTestOutput, "include-test-output", false, "Prints the test's output")
+	rootCmd.PersistentFlags().StringVar(&outputFile, "outputfile", "", "Writes the JSON results to output file")
 
 	goflag.CommandLine.VisitAll(func(goflag *goflag.Flag) {
 		rootCmd.PersistentFlags().AddGoFlag(goflag)
