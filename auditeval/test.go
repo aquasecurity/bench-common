@@ -187,6 +187,10 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 			case "eq":
 				expectedResultPattern = "'%s' Is equal to '%s'"
 				value := strings.ToLower(flagVal)
+				// In case the result should be empty, changing the status to indicate "No output"
+				if t.Compare.Value == "" && t.Flag == "" {
+					expectedResultPattern = "%s%sNo output"
+				}
 				// Do case insensitive comparison for booleans ...
 				if value == "false" || value == "true" {
 					TestResult = value == t.Compare.Value
