@@ -2,9 +2,11 @@ package check
 
 import (
 	"github.com/aquasecurity/bench-common/auditeval"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/aquasecurity/bench-common/util"
 	"reflect"
 	"testing"
+	yaml "gopkg.in/yaml.v2"
+
 )
 
 var testDefinedConstraints = map[string][]string{"platform": {"ubuntu", "rhel"}, "boot": {"grub"}}
@@ -21,7 +23,7 @@ test_items:
 func TestCheck_Run(t *testing.T) {
 	type TestCase struct {
 		check    Check
-		Expected State
+		Expected util.State
 	}
 
 	ts := new(auditeval.Tests)
@@ -35,10 +37,10 @@ func TestCheck_Run(t *testing.T) {
 	checkNoTests := Check{Type: "", Scored: true}
 
 	testCases := []TestCase{
-		{check: checkTypeManual, Expected: WARN},
-		{check: checkTypeSkip, Expected: INFO},
-		{check: checkNotScored, Expected: WARN}, // Not scored checks with no type should be marked warn
-		{check: checkNoTests, Expected: WARN},   // If there are no tests in the check, warn
+		{check: checkTypeManual, Expected: util.WARN},
+		{check: checkTypeSkip, Expected: util.INFO},
+		{check: checkNotScored, Expected: util.WARN}, // Not scored checks with no type should be marked warn
+		{check: checkNoTests, Expected: util.WARN},   // If there are no tests in the check, warn
 	}
 
 	for i, testCase := range testCases {

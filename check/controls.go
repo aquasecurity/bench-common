@@ -15,12 +15,13 @@
 package check
 
 import (
+	"archive/tar"
 	"encoding/json"
 	"fmt"
+	"github.com/aquasecurity/bench-common/util"
 	"github.com/golang/glog"
+	"gopkg.in/yaml.v2"
 	"strings"
-
-	yaml "gopkg.in/yaml.v2"
 )
 
 // Controls holds all controls to check for master nodes.
@@ -30,6 +31,12 @@ type Controls struct {
 	Groups      []*Group `json:"tests"`
 	Summary
 	DefinedConstraints map[string][]string
+	isAction           bool
+	boundaryPath       string
+	definitions        []string
+	ids                []string
+	tarHeaders         []tar.Header
+	inYaml             []byte
 }
 
 // Summary is a summary of the results of control checks run.
@@ -40,60 +47,93 @@ type Summary struct {
 	Info int `json:"total_info"`
 }
 
-// NewControls instantiates a new master Controls object.
-func NewControls(in []byte, definitions []string) (*Controls, error) {
-	c := new(Controls)
+func (controls *Controls) WithIsAction(isAction bool) *Controls {
+	controls.isAction = isAction
+	return controls
+}
 
-	err := yaml.Unmarshal(in, c)
+func (controls *Controls) WithBoundary(path string) *Controls {
+	controls.boundaryPath = path
+	return controls
+}
+
+func (controls *Controls) WithDefinitions(definitions []string) *Controls {
+	controls.definitions = definitions
+	return controls
+}
+
+func (controls *Controls) WithIds(ids ...string) *Controls {
+	controls.ids = ids
+	return controls
+}
+
+func (controls *Controls) WithTarHeaders(tarHeaders []tar.Header) *Controls {
+	controls.tarHeaders = tarHeaders
+	return controls
+}
+
+// NewControls instantiates a new master Controls object.
+func NewControls(in []byte) *Controls {
+	c := new(Controls)
+	c.inYaml = in
+	return c
+}
+
+func (controls *Controls) Build() (*Controls, error) {
+
+	err := yaml.Unmarshal(controls.inYaml, controls)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal YAML: %s", err)
 	}
-
-	// Prepare audit commands
-	for _, group := range c.Groups {
-		for _, check := range group.Checks {
-			if check.SubChecks == nil {
-				check.Commands = textToCommand(check.Audit)
-			} else {
-				for i, SubCheck := range check.SubChecks {
-					check.SubChecks[i].Commands = textToCommand(SubCheck.Audit)
+	if !controls.isAction {
+		// Prepare audit commands
+		for _, group := range controls.Groups {
+			for _, check := range group.Checks {
+				if check.SubChecks == nil {
+					check.Commands = textToCommand(check.Audit)
+				} else {
+					for i, SubCheck := range check.SubChecks {
+						check.SubChecks[i].Commands = textToCommand(SubCheck.Audit)
+					}
 				}
 			}
 		}
 	}
 
-	if len(definitions) > 0 {
-		c.DefinedConstraints = map[string][]string{}
-		for _, val := range definitions {
+	if len(controls.definitions) > 0 {
+		controls.DefinedConstraints = map[string][]string{}
+		for _, val := range controls.definitions {
 			a := strings.Split(val, "=")
 
 			// If its type 'category=value' for example 'platform=ubuntu'
 			if len(a) == 2 && a[0] != "" && a[1] != "" {
-				c.DefinedConstraints[a[0]] = append(c.DefinedConstraints[a[0]], a[1])
+				controls.DefinedConstraints[a[0]] = append(controls.DefinedConstraints[a[0]], a[1])
 			} else {
 				glog.V(1).Info("failed to parse defined constraint, ", val)
 			}
 		}
 	}
-
-	return c, nil
+	return controls, nil
 }
 
-// RunGroup runs all checks in a group.
-func (controls *Controls) RunGroup(gids ...string) Summary {
+func (controls *Controls) RunGroup() Summary {
 	g := []*Group{}
 	controls.Summary.Pass, controls.Summary.Fail, controls.Summary.Warn, controls.Summary.Info = 0, 0, 0, 0
 
 	// If no groupid is passed run all group checks.
-	if len(gids) == 0 {
-		gids = controls.getAllGroupIDs()
+	if len(controls.ids) == 0 {
+		controls.ids = controls.getAllGroupIDs()
 	}
 
 	for _, group := range controls.Groups {
-		for _, gid := range gids {
+		for _, gid := range controls.ids {
 			if gid == group.ID {
 				for _, check := range group.Checks {
-					check.Run(controls.DefinedConstraints)
+					check.WithAction(controls.isAction).
+						WithBoundaryPath(controls.boundaryPath).
+						WithTarHeaders(controls.tarHeaders).
+						Run(controls.DefinedConstraints)
+
 					check.TestInfo = append(check.TestInfo, check.Remediation)
 					summarize(controls, check)
 					summarizeGroup(group, check)
@@ -104,27 +144,29 @@ func (controls *Controls) RunGroup(gids ...string) Summary {
 		}
 
 	}
-
 	controls.Groups = g
 	return controls.Summary
 }
 
 // RunChecks runs the checks with the supplied IDs.
-func (controls *Controls) RunChecks(ids ...string) Summary {
+func (controls *Controls) RunChecks() Summary {
 	g := []*Group{}
 	m := make(map[string]*Group)
 	controls.Summary.Pass, controls.Summary.Fail, controls.Summary.Warn, controls.Summary.Info = 0, 0, 0, 0
 
-	// If no groupid is passed run all group checks.
-	if len(ids) == 0 {
-		ids = controls.getAllCheckIDs()
+	// If no group id is passed run all group checks.
+	if len(controls.ids) == 0 {
+		controls.ids = controls.getAllCheckIDs()
 	}
 
 	for _, group := range controls.Groups {
 		for _, check := range group.Checks {
-			for _, id := range ids {
+			for _, id := range controls.ids {
 				if id == check.ID {
-					check.Run(controls.DefinedConstraints)
+					check.WithAction(controls.isAction).
+						WithBoundaryPath(controls.boundaryPath).
+						WithTarHeaders(controls.tarHeaders).
+						Run(controls.DefinedConstraints)
 					check.TestInfo = append(check.TestInfo, check.Remediation)
 					summarize(controls, check)
 
@@ -184,26 +226,26 @@ func (controls *Controls) JSON() ([]byte, error) {
 
 func summarize(controls *Controls, check *Check) {
 	switch check.State {
-	case PASS:
+	case util.PASS:
 		controls.Summary.Pass++
-	case FAIL:
+	case util.FAIL:
 		controls.Summary.Fail++
-	case WARN:
+	case util.WARN:
 		controls.Summary.Warn++
-	case INFO:
+	case util.INFO:
 		controls.Summary.Info++
 	}
 }
 
 func summarizeGroup(group *Group, check *Check) {
 	switch check.State {
-	case PASS:
+	case util.PASS:
 		group.Pass++
-	case FAIL:
+	case util.FAIL:
 		group.Fail++
-	case WARN:
+	case util.WARN:
 		group.Warn++
-	case INFO:
+	case util.INFO:
 		group.Info++
 	}
 }

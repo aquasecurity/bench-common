@@ -1,5 +1,9 @@
 package main
 
+import (
+	"github.com/aquasecurity/bench-common/cmd"
+)
+
 func main() {
-	Execute()
+	cmd.Execute()
 }

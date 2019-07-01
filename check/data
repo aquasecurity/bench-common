@@ -81,8 +81,7 @@ groups:
               op: eq
               value: 0
             set: true
-          -
-            flag: "--secure-port"
+          - flag: "--secure-port"
             set: false
 
     - id: 8
