@@ -63,7 +63,6 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 			SubChecks: []*SubCheck{
 				{
 					BaseCheck{
-						Audit:       "ls /home | grep $USER",
 						Constraints: map[string][]string{"platform": []string{"ubuntu"}},
 						Remediation: "Fake test, check that current user has home directory",
 						auditer:     Audit("ls /home | grep $USER"),
@@ -79,7 +78,6 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 				},
 			},
 			Expected: &BaseCheck{
-				Audit:       "ls /home | grep $USER",
 				Constraints: map[string][]string{"platform": []string{"ubuntu"}},
 				Remediation: "Fake test, check that current user has home directory",
 				auditer:     Audit("ls /home | grep $USER"),
@@ -89,7 +87,6 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 			SubChecks: []*SubCheck{
 				{
 					BaseCheck{
-						Audit:       "ls /home | grep $USER",
 						Constraints: map[string][]string{"platform": []string{"ubuntu", "p"}},
 						Remediation: "Fake test, check that current user has home directory",
 						auditer:     Audit("ls /home | grep $USER"),
@@ -97,7 +94,6 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 				},
 				{
 					BaseCheck{
-						Audit:       "ls /home | grep $USER",
 						Constraints: map[string][]string{"platform": []string{"Fail", "ubuntu", "grub"}},
 						Remediation: "Fake test, check that current user has home directory",
 						auditer:     Audit("ls /home | grep $USER"),

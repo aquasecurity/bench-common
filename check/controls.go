@@ -76,60 +76,60 @@ func NewControls(in []byte, definitions []string, customConfigs ...interface{}) 
 
 func (controls *Controls) convertAuditToRegisteredType(auditType AuditType, audit interface{}) (auditer Auditer, err error) {
 
-	var auditBytes  []byte
+	var auditBytes []byte
 	if auditType == "" || auditType == TypeAudit {
-		if s, ok := audit.(string); ok || audit == nil {
+		if s, ok := audit.(string);  ok || audit == nil {
 
 			return Audit(s), nil
 		}
 		return nil, fmt.Errorf("failed to convert audit, mismatching type")
-	} else {
-		if callback, ok := controls.auditTypeRegistry[auditType]; ok {
-			o := callback()
-			if auditBytes, err = yaml.Marshal(audit); err == nil {
-				if err := yaml.Unmarshal(auditBytes, o); err != nil {
-					return nil, fmt.Errorf("unable to Unmarshal Audit %v", err)
-				}
-				return o.(Auditer), nil // we don't check error because it already verified in convertAuditToRegisteredType
-
+	}
+	if callback, ok := controls.auditTypeRegistry[auditType]; ok {
+		o := callback()
+		if auditBytes, err = yaml.Marshal(audit); err == nil {
+			if err := yaml.Unmarshal(auditBytes, o); err != nil {
+				return nil, fmt.Errorf("unable to Unmarshal Audit %v", err)
 			}
-			return nil, fmt.Errorf("unable to marshal Audit %v", err)
+			return o.(Auditer), nil
 
 		}
-		return nil, fmt.Errorf("audit type %v is not registered", auditType)
+		return nil, fmt.Errorf("unable to marshal Audit %v", err)
+
 	}
+	return nil, fmt.Errorf("audit type %v is not registered", auditType)
+
 }
 
 func (controls *Controls) RegisterAuditType(auditType AuditType, typeCallback func() interface{}) error {
 
-	if _, ok := controls.auditTypeRegistry[auditType]; !ok {
-		a := typeCallback()
-		if _, ok := a.(Auditer); !ok {
-			return fmt.Errorf("audit type %v must implement Auditer interface", auditType)
-		}
+	if _, ok := controls.auditTypeRegistry[auditType]; ok {
+		return fmt.Errorf("audit type %v already registered", auditType)
+	}
+	a := typeCallback()
+	if _, ok := a.(Auditer); ok {
 		controls.auditTypeRegistry[auditType] = typeCallback
 		return nil
-
 	}
-	return fmt.Errorf("audit type %v already registered", auditType)
+	return fmt.Errorf("audit type %v must implement Auditer interface", auditType)
+
 }
 
 func extractAllAudits(controls *Controls) (err error) {
-	// Prepare audit commands
+	var audit Auditer
 	for _, group := range controls.Groups {
 		for _, check := range group.Checks {
 			if check.SubChecks == nil {
-				if a, err := controls.convertAuditToRegisteredType(check.AuditType, check.Audit); err == nil {
+				if audit, err = controls.convertAuditToRegisteredType(check.AuditType, check.Audit); err == nil {
 
-					check.auditer = a
+					check.auditer = audit
 					check.customConfigs = controls.customConfigs
 				}
 				return err
 			} else {
 				for _, subCheck := range check.SubChecks {
 
-					if a, err := controls.convertAuditToRegisteredType(subCheck.AuditType, subCheck.Audit); err == nil {
-						subCheck.auditer = a
+					if audit, err = controls.convertAuditToRegisteredType(subCheck.AuditType, subCheck.Audit); err == nil {
+						subCheck.auditer = audit
 						subCheck.customConfigs = controls.customConfigs
 					}
 					return err
