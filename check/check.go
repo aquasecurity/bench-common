@@ -26,6 +26,38 @@ import (
 
 // State is the state of a control check.
 type State string
+type AuditType string
+
+const TypeAudit = "audit"
+
+type Audit string
+
+func (audit Audit) Execute(customConfig ...interface{}) (result string, errMessage string, state State) {
+
+	commands := textToCommand(string(audit))
+
+	// Check if command exists or exit with WARN.
+	for _, cmd := range commands {
+		if !isShellCommand(cmd.Path) {
+			glog.V(1).Infof("%s: command not found", cmd.Path)
+			return result, errMessage, WARN
+		}
+	}
+
+	// Run commands.
+	n := len(commands)
+	if n == 0 {
+		// Likely a warning message.
+		return result, errMessage, WARN
+	}
+
+	res, err := exec.Command("sh", "-c", string(audit) ).Output()
+
+	if err != nil {
+		errMessage = err.Error()
+	}
+	return string(res), errMessage, ""
+}
 
 const (
 	// PASS check passed.
@@ -47,12 +79,15 @@ func handleError(err error, context string) (errmsg string) {
 
 // Old version - checks don't have sub checks, each check has only one sub check as part of the check itself
 type BaseCheck struct {
-	Audit       string              `json:"audit"`
-	Type        string              `json:"type"`
-	Commands    []*exec.Cmd         `json:"omit"`
-	Tests       *auditeval.Tests    `json:"omit"`
-	Remediation string              `json:"-"`
-	Constraints map[string][]string `yaml:"constraints"`
+	AuditType     AuditType           `json:"audit_type"`
+	Audit         interface{}         `json:"audit"`
+	Type          string              `json:"type"`
+	Commands      []*exec.Cmd         `json:"omit"`
+	Tests         *auditeval.Tests    `json:"omit"`
+	Remediation   string              `json:"-"`
+	Constraints   map[string][]string `yaml:"constraints"`
+	auditer       Auditer
+	customConfigs []interface{}
 }
 
 type SubCheck struct {
@@ -64,8 +99,9 @@ type Check struct {
 	ID             string           `yaml:"id" json:"test_number"`
 	Description    string           `json:"test_desc"`
 	Set            bool             `json:"omit"`
-	SubChecks      []SubCheck       `yaml:"sub_checks"`
-	Audit          string           `json:"audit"`
+	SubChecks      []*SubCheck       `yaml:"sub_checks"`
+	AuditType      AuditType        `json:"audit_type"`
+	Audit          interface{}      `json:"omit"`
 	Type           string           `json:"type"`
 	Commands       []*exec.Cmd      `json:"omit"`
 	Tests          *auditeval.Tests `json:"omit"`
@@ -76,6 +112,8 @@ type Check struct {
 	ExpectedResult string `json:"expected_result"`
 	Scored         bool   `json:"scored"`
 	IsMultiple     bool   `yaml:"use_multiple_values"`
+	auditer        Auditer
+	customConfigs  []interface{}
 }
 
 // Group is a collection of similar checks.
@@ -107,11 +145,14 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 	var subCheck *BaseCheck
 	if c.SubChecks == nil {
 		subCheck = &BaseCheck{
-			Commands:    c.Commands,
-			Tests:       c.Tests,
-			Type:        c.Type,
-			Audit:       c.Audit,
-			Remediation: c.Remediation,
+			Commands:      c.Commands,
+			Tests:         c.Tests,
+			Type:          c.Type,
+			Audit:         c.Audit,
+			Remediation:   c.Remediation,
+			AuditType:     c.AuditType,
+			auditer:       c.auditer,
+			customConfigs: c.customConfigs,
 		}
 	} else {
 		subCheck = getFirstValidSubCheck(c.SubChecks, definedConstraints)
@@ -156,8 +197,11 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 // textToCommand transforms an input text representation of commands to be
 // run into a slice of commands.
 // TODO: Make this more robust.
-func textToCommand(s string) []*exec.Cmd {
-	cmds := []*exec.Cmd{}
+func textToCommand(s string) (cmds []*exec.Cmd) {
+	if s == "" {
+		return cmds
+	}
+	cmds = []*exec.Cmd{}
 
 	cp := strings.Split(s, "|")
 
@@ -223,34 +267,13 @@ func runAuditCommands(c BaseCheck) (output, errMessage string, state State) {
 	if c.Type == "skip" {
 		return output, errMessage, INFO
 	}
-
-	// Check if command exists or exit with WARN.
-	for _, cmd := range c.Commands {
-		if !isShellCommand(cmd.Path) {
-			glog.V(1).Infof("%s: command not found", cmd.Path)
-			return output, errMessage, WARN
-		}
+	if c.auditer != nil {
+		return c.auditer.Execute(c.customConfigs...)
 	}
-
-	// Run commands.
-	n := len(c.Commands)
-	if n == 0 {
-		// Likely a warning message.
-		return output, errMessage, WARN
-	}
-
-	out, err := exec.Command("sh", "-c", c.Audit).Output()
-
-	if err != nil {
-		errMessage = err.Error()
-	}
-
-	output = string(out)
-
-	return output, errMessage, ""
+	return
 }
 
-func getFirstValidSubCheck(subChecks []SubCheck, definedConstraints map[string][]string) (subCheck *BaseCheck) {
+func getFirstValidSubCheck(subChecks []*SubCheck, definedConstraints map[string][]string) (subCheck *BaseCheck) {
 	for _, sc := range subChecks {
 		isSubCheckOk := true
 

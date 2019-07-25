@@ -20,8 +20,12 @@ import (
 	"github.com/golang/glog"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
+
+type Auditer interface {
+	Execute(customConfig ...interface{}) (result string, errMsg string, state State)
+}
 
 // Controls holds all controls to check for master nodes.
 type Controls struct {
@@ -30,6 +34,8 @@ type Controls struct {
 	Groups      []*Group `json:"tests"`
 	Summary
 	DefinedConstraints map[string][]string
+	auditTypeRegistry  map[AuditType]func() interface{}
+	customConfigs      []interface{}
 }
 
 // Summary is a summary of the results of control checks run.
@@ -41,27 +47,16 @@ type Summary struct {
 }
 
 // NewControls instantiates a new master Controls object.
-func NewControls(in []byte, definitions []string) (*Controls, error) {
-	c := new(Controls)
+func NewControls(in []byte, definitions []string, customConfigs ...interface{}) (*Controls, error) {
 
+	c := new(Controls)
+	c.auditTypeRegistry = make(map[AuditType]func() interface{})
 	err := yaml.Unmarshal(in, c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal YAML: %s", err)
 	}
 
-	// Prepare audit commands
-	for _, group := range c.Groups {
-		for _, check := range group.Checks {
-			if check.SubChecks == nil {
-				check.Commands = textToCommand(check.Audit)
-			} else {
-				for i, SubCheck := range check.SubChecks {
-					check.SubChecks[i].Commands = textToCommand(SubCheck.Audit)
-				}
-			}
-		}
-	}
-
+	c.customConfigs = customConfigs
 	if len(definitions) > 0 {
 		c.DefinedConstraints = map[string][]string{}
 		for _, val := range definitions {
@@ -79,12 +74,82 @@ func NewControls(in []byte, definitions []string) (*Controls, error) {
 	return c, nil
 }
 
+func (controls *Controls) convertAuditToRegisteredType(auditType AuditType, audit interface{}) (auditer Auditer, err error) {
+
+	var auditBytes  []byte
+	if auditType == "" || auditType == TypeAudit {
+		if s, ok := audit.(string); ok || audit == nil {
+
+			return Audit(s), nil
+		}
+		return nil, fmt.Errorf("failed to convert audit, mismatching type")
+	} else {
+		if callback, ok := controls.auditTypeRegistry[auditType]; ok {
+			o := callback()
+			if auditBytes, err = yaml.Marshal(audit); err == nil {
+				if err := yaml.Unmarshal(auditBytes, o); err != nil {
+					return nil, fmt.Errorf("unable to Unmarshal Audit %v", err)
+				}
+				return o.(Auditer), nil // we don't check error because it already verified in convertAuditToRegisteredType
+
+			}
+			return nil, fmt.Errorf("unable to marshal Audit %v", err)
+
+		}
+		return nil, fmt.Errorf("audit type %v is not registered", auditType)
+	}
+}
+
+func (controls *Controls) RegisterAuditType(auditType AuditType, typeCallback func() interface{}) error {
+
+	if _, ok := controls.auditTypeRegistry[auditType]; !ok {
+		a := typeCallback()
+		if _, ok := a.(Auditer); !ok {
+			return fmt.Errorf("audit type %v must implement Auditer interface", auditType)
+		}
+		controls.auditTypeRegistry[auditType] = typeCallback
+		return nil
+
+	}
+	return fmt.Errorf("audit type %v already registered", auditType)
+}
+
+func extractAllAudits(controls *Controls) (err error) {
+	// Prepare audit commands
+	for _, group := range controls.Groups {
+		for _, check := range group.Checks {
+			if check.SubChecks == nil {
+				if a, err := controls.convertAuditToRegisteredType(check.AuditType, check.Audit); err == nil {
+
+					check.auditer = a
+					check.customConfigs = controls.customConfigs
+				}
+				return err
+			} else {
+				for _, subCheck := range check.SubChecks {
+
+					if a, err := controls.convertAuditToRegisteredType(subCheck.AuditType, subCheck.Audit); err == nil {
+						subCheck.auditer = a
+						subCheck.customConfigs = controls.customConfigs
+					}
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // RunGroup runs all checks in a group.
 func (controls *Controls) RunGroup(gids ...string) Summary {
 	g := []*Group{}
 	controls.Summary.Pass, controls.Summary.Fail, controls.Summary.Warn, controls.Summary.Info = 0, 0, 0, 0
-
-	// If no groupid is passed run all group checks.
+	err := extractAllAudits(controls)
+	if err != nil {
+		glog.V(1).Infof("failed to extract audit %v", err)
+		return controls.Summary
+	}
+	// If no group id is passed run all group checks.
 	if len(gids) == 0 {
 		gids = controls.getAllGroupIDs()
 	}
@@ -113,6 +178,12 @@ func (controls *Controls) RunGroup(gids ...string) Summary {
 func (controls *Controls) RunChecks(ids ...string) Summary {
 	g := []*Group{}
 	m := make(map[string]*Group)
+	err := extractAllAudits(controls)
+	if err != nil {
+		glog.V(1).Infof("failed to extract audit %v", err)
+		return controls.Summary
+	}
+
 	controls.Summary.Pass, controls.Summary.Fail, controls.Summary.Warn, controls.Summary.Info = 0, 0, 0, 0
 
 	// If no groupid is passed run all group checks.
