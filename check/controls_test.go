@@ -44,7 +44,7 @@ groups:
       text: "Ensure that the --allow-privileged argument is set to false (Scored)"
       sub_checks:
       - check:
-        audit: "ps -ef | grep $apiserverbin | grep -v grep"
+        audit: "this is a subcheck audit string"
         tests:
           test_items:
           - flag: "allow-privileged"
@@ -52,6 +52,18 @@ groups:
               op: eq
               value: false
             set: true			  
+      remediation: "Make it work"
+      scored: true
+    - id: 1.1.3
+      text: "More than one test with tests rather than subchecks"
+      audit: "some other audit string"
+      tests:
+        test_items:
+        - flag: "allow-privileged"
+          compare:
+            op: eq
+            value: false
+          set: true			  
       remediation: "Make it work"
       scored: true
 `
