@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const check = `---
+const controlYaml = `---
 controls:
 id: 1
 text: "Master Node Security Configuration"
@@ -59,7 +59,7 @@ func TestNewControlsWrongType(t *testing.T) {
 		wantErr bool
 	}{
 		{"create controls test",
-			args{[]byte(check), []string{}},
+			args{[]byte(controlYaml), []string{}},
 			nil,
 			true},
 	}
