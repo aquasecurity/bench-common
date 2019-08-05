@@ -139,8 +139,6 @@ func TestExtractAllAuditsForDefaultBench(t *testing.T) {
 			}
 
 			for _, s := range c.SubChecks {
-				if s.Audit != nil && s.Audit != "" {
-
 					if s.auditer == nil {
 						t.Errorf("ID %s: Unexpected nil auditer", c.ID)
 						continue
@@ -155,7 +153,6 @@ func TestExtractAllAuditsForDefaultBench(t *testing.T) {
 					if string(audit) != fmt.Sprintf("%v", s.Audit) {
 						t.Errorf("ID %s: extracted audit %s, expected %v", c.ID, string(audit), s.Audit)
 					}
-				}
 			}
 		}
 	}
