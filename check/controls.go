@@ -85,12 +85,12 @@ func (controls *Controls) convertAuditToRegisteredType(auditType AuditType, audi
 	}
 	
 	if callback, ok := controls.auditTypeRegistry[auditType]; !ok {
-		return nil, fmt.Errorf("unable to marshal Audit %v", err)
+		return nil, fmt.Errorf("audit type %v is not registered", auditType)
 	}
 
 	o := callback()
 	if auditBytes, err = yaml.Marshal(audit); err == nil {
-		return nil, fmt.Errorf("audit type %v is not registered", auditType)
+		return nil, fmt.Errorf("unable to marshal Audit %v", err)
 	}
 	
 	if err := yaml.Unmarshal(auditBytes, o); err != nil {
