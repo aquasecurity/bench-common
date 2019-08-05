@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-
 const check = `---
 controls:
 id: 1
@@ -32,22 +31,15 @@ groups:
       scored: true
 `
 
-
 func Test_bench_RegisterAuditType_Already_Registered(t *testing.T) {
 
 	bench := NewBench()
 
-	if err := bench.RegisterAuditType(TypeAudit, func() interface{} {
-		return Audit("test")
-	})	; err != nil{
-
+	if err := bench.RegisterAuditType(TypeAudit, func() interface{} { return Audit("test") }); err != nil {
 		t.Errorf("Failed to register new Audit type")
 		return
 	}
-	if err := bench.RegisterAuditType(TypeAudit, func() interface{} {
-		return Audit("test")
-	})	; err == nil{
-
+	if err := bench.RegisterAuditType(TypeAudit, func() interface{} { return Audit("test") }); err == nil {
 		t.Errorf("RegisterAuditType failed on duplicate types")
 		return
 	}
@@ -57,8 +49,8 @@ func Test_bench_RegisterAuditType_Already_Registered(t *testing.T) {
 func Test_bench_NewControls_wrong_type(t *testing.T) {
 
 	type args struct {
-		in            []byte
-		definitions   []string
+		in          []byte
+		definitions []string
 	}
 	tests := []struct {
 		name    string
@@ -68,8 +60,8 @@ func Test_bench_NewControls_wrong_type(t *testing.T) {
 	}{
 		{"create controls test",
 			args{[]byte(check), []string{}},
-		nil,
-		true},
+			nil,
+			true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -85,7 +77,6 @@ func Test_bench_NewControls_wrong_type(t *testing.T) {
 		})
 	}
 }
-
 
 func TestExtractAllAudits_for_default_bench(t *testing.T) {
 
