@@ -44,7 +44,7 @@ groups:
       text: "Ensure that the --allow-privileged argument is set to false (Scored)"
       sub_checks:
       - check:
-        audit: "ps -ef | grep $apiserverbin | grep -v grep"
+        audit: "this is a subcheck audit string"
         tests:
           test_items:
           - flag: "allow-privileged"
@@ -52,6 +52,18 @@ groups:
               op: eq
               value: false
             set: true			  
+      remediation: "Make it work"
+      scored: true
+    - id: 1.1.3
+      text: "More than one test with tests rather than subchecks"
+      audit: "some other audit string"
+      tests:
+        test_items:
+        - flag: "allow-privileged"
+          compare:
+            op: eq
+            value: false
+          set: true			  
       remediation: "Make it work"
       scored: true
 `
@@ -107,6 +119,53 @@ func TestSummarizeGroup(t *testing.T) {
 
 		if actual != test.Expected {
 			t.Errorf("test %d fail: expected: %v actual: %v\ntest details: %+v\n", i, test.Expected, actual, test)
+		}
+	}
+}
+
+func TestExtractAllAudits(t *testing.T) {
+
+	c, err := NewControls([]byte(def), nil)
+	if err != nil {
+		t.Fatalf("could not create control object: %s", err)
+	}
+
+	err = extractAllAudits(c)
+	if err != nil {
+		t.Fatalf("test failed: %v", err)
+	}
+
+	for _, g := range c.Groups {
+		for _, c := range g.Checks {
+
+			if c.Audit != nil && c.Audit != "" {
+				if c.auditer == nil {
+					t.Errorf("ID %s: Unexpected nil auditer", c.ID)
+					continue
+				}
+				audit, ok := c.auditer.(Audit)
+				if !ok {
+					t.Errorf("ID %s: Couldn't convert auditer %v to Audit", c.ID, c.auditer)
+				}
+
+				if string(audit) != c.Audit {
+					t.Errorf("ID %s: extracted audit %s, doesn't match audit string %s", c.ID, string(audit), c.Audit)
+				}
+			}
+
+			for _, s := range c.SubChecks {
+				if s.auditer == nil {
+					t.Errorf("ID %s: Unexpected nil auditer", c.ID)
+					continue
+				}
+				audit, ok := s.auditer.(Audit)
+				if !ok {
+					t.Errorf("ID %s: Couldn't convert auditer %v to Audit", c.ID, s.auditer)
+				}
+				if string(audit) != s.Audit {
+					t.Errorf("ID %s: extracted audit %s, expected %s", c.ID, string(audit), s.Audit)
+				}
+			}
 		}
 	}
 }
