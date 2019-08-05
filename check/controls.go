@@ -79,25 +79,24 @@ func (controls *Controls) convertAuditToRegisteredType(auditType AuditType, audi
 	var auditBytes []byte
 	if auditType == "" || auditType == TypeAudit {
 		if s, ok := audit.(string);  ok || audit == nil {
-
 			return Audit(s), nil
 		}
 		return nil, fmt.Errorf("failed to convert audit, mismatching type")
 	}
-	if callback, ok := controls.auditTypeRegistry[auditType]; ok {
-		o := callback()
-		if auditBytes, err = yaml.Marshal(audit); err == nil {
-			if err := yaml.Unmarshal(auditBytes, o); err != nil {
-				return nil, fmt.Errorf("unable to Unmarshal Audit %v", err)
-			}
-			return o.(Auditer), nil
-
-		}
+	
+	if callback, ok := controls.auditTypeRegistry[auditType]; !ok {
 		return nil, fmt.Errorf("unable to marshal Audit %v", err)
-
 	}
-	return nil, fmt.Errorf("audit type %v is not registered", auditType)
 
+	o := callback()
+	if auditBytes, err = yaml.Marshal(audit); err == nil {
+		return nil, fmt.Errorf("audit type %v is not registered", auditType)
+	}
+	
+	if err := yaml.Unmarshal(auditBytes, o); err != nil {
+		return nil, fmt.Errorf("unable to Unmarshal Audit %v", err)
+	}
+	return o.(Auditer), nil
 }
 
 func (controls *Controls) RegisterAuditType(auditType AuditType, typeCallback func() interface{}) error {
@@ -120,14 +119,12 @@ func extractAllAudits(controls *Controls) (err error) {
 		for _, check := range group.Checks {
 			if check.SubChecks == nil {
 				if audit, err = controls.convertAuditToRegisteredType(check.AuditType, check.Audit); err == nil {
-
 					check.auditer = audit
 					check.customConfigs = controls.customConfigs
 				}
 				return err
 			} else {
 				for _, subCheck := range check.SubChecks {
-
 					if audit, err = controls.convertAuditToRegisteredType(subCheck.AuditType, subCheck.Audit); err == nil {
 						subCheck.auditer = audit
 						subCheck.customConfigs = controls.customConfigs
