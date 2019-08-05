@@ -17,8 +17,9 @@ package check
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/golang/glog"
 	"strings"
+
+	"github.com/golang/glog"
 
 	"gopkg.in/yaml.v2"
 )
@@ -77,14 +78,17 @@ func NewControls(in []byte, definitions []string, customConfigs ...interface{}) 
 func (controls *Controls) convertAuditToRegisteredType(auditType AuditType, audit interface{}) (auditer Auditer, err error) {
 
 	var auditBytes []byte
+	var callback func() interface{}
+	var ok bool
+
 	if auditType == "" || auditType == TypeAudit {
-		if s, ok := audit.(string);  ok || audit == nil {
+		if s, ok := audit.(string); ok || audit == nil {
 			return Audit(s), nil
 		}
 		return nil, fmt.Errorf("failed to convert audit, mismatching type")
 	}
-	
-	if callback, ok := controls.auditTypeRegistry[auditType]; !ok {
+
+	if callback, ok = controls.auditTypeRegistry[auditType]; !ok {
 		return nil, fmt.Errorf("audit type %v is not registered", auditType)
 	}
 
@@ -92,7 +96,7 @@ func (controls *Controls) convertAuditToRegisteredType(auditType AuditType, audi
 	if auditBytes, err = yaml.Marshal(audit); err == nil {
 		return nil, fmt.Errorf("unable to marshal Audit %v", err)
 	}
-	
+
 	if err := yaml.Unmarshal(auditBytes, o); err != nil {
 		return nil, fmt.Errorf("unable to Unmarshal Audit %v", err)
 	}
