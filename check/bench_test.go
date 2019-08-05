@@ -2,11 +2,10 @@ package check
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 )
 
-const controlYaml = `---
+const wrongTypeYaml = `---
 controls:
 id: 1
 text: "Master Node Security Configuration"
@@ -30,6 +29,27 @@ groups:
               the KUBE_ALLOW_PRIV parameter to \"--allow-privileged=false\""
       scored: true
 `
+const customTypeYaml = `---
+controls:
+id: 1
+text: "Master Node Security Configuration"
+type: "master"
+groups:
+- id: 1.1
+  text: "API Server"
+  checks:
+    - id: 1.1.1
+      text: "Check host IP"
+      audittype: "check_ip"
+      audit:
+         url: https://api.ipify.org?format=json 
+      tests:
+        test_items:
+        - flag: "192.168.1.1"
+          set: true
+      remediation: "Access allowed from ip 192.168.1.1 only"
+      scored: true
+`
 
 func TestRegisterAuditType(t *testing.T) {
 
@@ -45,8 +65,16 @@ func TestRegisterAuditType(t *testing.T) {
 	}
 
 }
+type IpAuditMock struct {
+	Url string
+}
 
-func TestNewControlsWrongType(t *testing.T) {
+func ( a IpAuditMock) Execute(customConfig ...interface{}) (result string, errMessage string, state State) {
+	//I don't really implement checking ip here, since the goal of this mock to test custom audit type
+	return "", "", PASS
+}
+func TestNewControlsType(t *testing.T) {
+
 
 	type args struct {
 		in          []byte
@@ -55,28 +83,28 @@ func TestNewControlsWrongType(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *Controls
 		wantErr bool
 	}{
-		{"create controls test",
-			args{[]byte(controlYaml), []string{}},
-			nil,
+		{"fail wrong type",
+			args{[]byte(wrongTypeYaml), []string{}},
 			true},
+		{"working correctly type",
+			args{[]byte(customTypeYaml), []string{}},
+			false},
 	}
+	b := NewBench()
+	b.RegisterAuditType("check_ip" , func() interface{} {return &IpAuditMock{}})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b := &bench{}
-			got, err := b.NewControls(tt.args.in, tt.args.definitions)
+			_, err := b.NewControls(tt.args.in, tt.args.definitions)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("bench.NewControls() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("bench.NewControls() = %v, want %v", got, tt.want)
-			}
 		})
 	}
 }
+
 
 func TestExtractAllAuditsForDefaultBench(t *testing.T) {
 
