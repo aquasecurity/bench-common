@@ -40,7 +40,7 @@ func Test_bench_RegisterAuditType_Already_Registered(t *testing.T) {
 		return
 	}
 	if err := bench.RegisterAuditType(TypeAudit, func() interface{} { return Audit("test") }); err == nil {
-		t.Errorf("RegisterAuditType failed on duplicate types")
+		t.Errorf("RegisterAuditType should have failed on duplicate types")
 		return
 	}
 
