@@ -31,7 +31,7 @@ groups:
       scored: true
 `
 
-func Test_bench_RegisterAuditType_Already_Registered(t *testing.T) {
+func TestRegisterAuditType(t *testing.T) {
 
 	bench := NewBench()
 
@@ -46,7 +46,7 @@ func Test_bench_RegisterAuditType_Already_Registered(t *testing.T) {
 
 }
 
-func Test_bench_NewControls_wrong_type(t *testing.T) {
+func TestNewControlsWrongType(t *testing.T) {
 
 	type args struct {
 		in          []byte
@@ -78,7 +78,7 @@ func Test_bench_NewControls_wrong_type(t *testing.T) {
 	}
 }
 
-func TestExtractAllAudits_for_default_bench(t *testing.T) {
+func TestExtractAllAuditsForDefaultBench(t *testing.T) {
 
 	c, err := NewControls([]byte(def), nil)
 	if err != nil {
