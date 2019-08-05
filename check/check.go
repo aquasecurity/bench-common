@@ -201,7 +201,6 @@ func textToCommand(s string) (cmds []*exec.Cmd) {
 	if s == "" {
 		return cmds
 	}
-	cmds = []*exec.Cmd{}
 
 	cp := strings.Split(s, "|")
 
