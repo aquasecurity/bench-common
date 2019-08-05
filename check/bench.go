@@ -50,7 +50,6 @@ func (b *bench) RegisterAuditType(auditType AuditType, typeCallback func() inter
 
 func (b *bench) NewControls(in []byte, definitions []string, customConfigs ...interface{}) (*Controls, error) {
 	c := new(Controls)
-	//c.auditTypeRegistry = defaultBench.auditTypeRegistry
 	err := yaml.Unmarshal(in, c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal YAML: %s", err)
