@@ -16,12 +16,11 @@ package check
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/golang/glog"
-	"strings"
-
-	yaml "gopkg.in/yaml.v2"
 )
+
+type Auditer interface {
+	Execute(customConfig ...interface{}) (result string, errMsg string, state State)
+}
 
 // Controls holds all controls to check for master nodes.
 type Controls struct {
@@ -30,6 +29,7 @@ type Controls struct {
 	Groups      []*Group `json:"tests"`
 	Summary
 	DefinedConstraints map[string][]string
+	customConfigs      []interface{}
 }
 
 // Summary is a summary of the results of control checks run.
@@ -40,51 +40,23 @@ type Summary struct {
 	Info int `json:"total_info"`
 }
 
+
+
+
+var defaultBench bench // for backward compatibility
 // NewControls instantiates a new master Controls object.
 func NewControls(in []byte, definitions []string) (*Controls, error) {
-	c := new(Controls)
-
-	err := yaml.Unmarshal(in, c)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal YAML: %s", err)
-	}
-
-	// Prepare audit commands
-	for _, group := range c.Groups {
-		for _, check := range group.Checks {
-			if check.SubChecks == nil {
-				check.Commands = textToCommand(check.Audit)
-			} else {
-				for i, SubCheck := range check.SubChecks {
-					check.SubChecks[i].Commands = textToCommand(SubCheck.Audit)
-				}
-			}
-		}
-	}
-
-	if len(definitions) > 0 {
-		c.DefinedConstraints = map[string][]string{}
-		for _, val := range definitions {
-			a := strings.Split(val, "=")
-
-			// If its type 'category=value' for example 'platform=ubuntu'
-			if len(a) == 2 && a[0] != "" && a[1] != "" {
-				c.DefinedConstraints[a[0]] = append(c.DefinedConstraints[a[0]], a[1])
-			} else {
-				glog.V(1).Info("failed to parse defined constraint, ", val)
-			}
-		}
-	}
-
-	return c, nil
+	return defaultBench.NewControls(in , definitions)
 }
+
+
+
 
 // RunGroup runs all checks in a group.
 func (controls *Controls) RunGroup(gids ...string) Summary {
 	g := []*Group{}
 	controls.Summary.Pass, controls.Summary.Fail, controls.Summary.Warn, controls.Summary.Info = 0, 0, 0, 0
-
-	// If no groupid is passed run all group checks.
+	// If no group id is passed run all group checks.
 	if len(gids) == 0 {
 		gids = controls.getAllGroupIDs()
 	}

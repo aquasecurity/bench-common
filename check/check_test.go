@@ -26,13 +26,13 @@ func TestCheck_Run(t *testing.T) {
 
 	ts := new(auditeval.Tests)
 	if err := yaml.Unmarshal([]byte(def1), ts); err != nil {
-		t.Fatalf("error unmarshaling tests yaml")
+		t.Fatalf("error unmarshaling tests yaml %v", err)
 	}
 
-	checkTypeManual := Check{Type: "manual", Commands: textToCommand("ps -ef"), Tests: ts, Scored: true}
-	checkTypeSkip := Check{Type: "skip", Commands: textToCommand("ps -ef"), Tests: ts, Scored: true}
-	checkNotScored := Check{Type: "", Commands: textToCommand("ps -ef"), Tests: ts, Scored: false}
-	checkNoTests := Check{Type: "", Scored: true}
+	checkTypeManual := Check{Type: "manual", Tests: ts, Scored: true, auditer: Audit("ps -ef")}
+	checkTypeSkip := Check{Type: "skip", Tests: ts, Scored: true, auditer: Audit("ps -ef")}
+	checkNotScored := Check{Type: "", Tests: ts, Scored: false, auditer: Audit("ps -ef")}
+	checkNoTests := Check{Type: "", Scored: true, auditer: Audit("")}
 
 	testCases := []TestCase{
 		{check: checkTypeManual, Expected: WARN},
@@ -53,19 +53,19 @@ func TestCheck_Run(t *testing.T) {
 
 func TestGetFirstValidSubCheck(t *testing.T) {
 	type TestCase struct {
-		SubChecks []SubCheck
+		SubChecks []*SubCheck
 		Chosen    *BaseCheck
 		Expected  *BaseCheck
 	}
 
 	testCases := []TestCase{
 		{
-			SubChecks: []SubCheck{
+			SubChecks: []*SubCheck{
 				{
 					BaseCheck{
-						Audit:       "ls /home | grep $USER",
 						Constraints: map[string][]string{"platform": []string{"ubuntu"}},
 						Remediation: "Fake test, check that current user has home directory",
+						auditer:     Audit("ls /home | grep $USER"),
 					},
 				},
 				{
@@ -73,29 +73,30 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 						Audit:       "ls /home | grep $USER",
 						Constraints: map[string][]string{"platform": []string{"Fail", "ubuntu", "grub"}},
 						Remediation: "Fake test, check that current user has home directory",
+						auditer:     Audit("ls /home | grep $USER"),
 					},
 				},
 			},
 			Expected: &BaseCheck{
-				Audit:       "ls /home | grep $USER",
 				Constraints: map[string][]string{"platform": []string{"ubuntu"}},
 				Remediation: "Fake test, check that current user has home directory",
+				auditer:     Audit("ls /home | grep $USER"),
 			},
 		},
 		{
-			SubChecks: []SubCheck{
+			SubChecks: []*SubCheck{
 				{
 					BaseCheck{
-						Audit:       "ls /home | grep $USER",
 						Constraints: map[string][]string{"platform": []string{"ubuntu", "p"}},
 						Remediation: "Fake test, check that current user has home directory",
+						auditer:     Audit("ls /home | grep $USER"),
 					},
 				},
 				{
 					BaseCheck{
-						Audit:       "ls /home | grep $USER",
 						Constraints: map[string][]string{"platform": []string{"Fail", "ubuntu", "grub"}},
 						Remediation: "Fake test, check that current user has home directory",
+						auditer:     Audit("ls /home | grep $USER"),
 					},
 				},
 			},
