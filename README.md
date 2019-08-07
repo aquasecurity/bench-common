@@ -1,5 +1,8 @@
 [![Build Status](https://travis-ci.org/aquasecurity/bench-common.svg?branch=master)](https://travis-ci.org/aquasecurity/bench-common)
+[![Coverage Status][cov-img]][cov]
 
+[cov-img]: https://codecov.io/github/aquasecurity/bench-common/branch/master/graph/badge.svg
+[cov]: https://codecov.io/github/aquasecurity/bench-common
 
 # Build and Test
 ## Requirement
