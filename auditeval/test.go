@@ -16,11 +16,12 @@ package auditeval
 
 import (
 	"fmt"
-	"github.com/golang/glog"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/golang/glog"
 )
 
 type binOp string
@@ -130,6 +131,9 @@ func (ts *Tests) Execute(s, testId string, isMultipleOutput bool) *testOutput {
 }
 
 func toNumeric(a, b string) (c, d int, err error) {
+	a = strings.TrimSpace(a)
+	b = strings.TrimSpace(b)
+
 	if len(a) == 0 || len(b) == 0 {
 		return -1, -1, fmt.Errorf("cannot convert blank value to numeric")
 	}

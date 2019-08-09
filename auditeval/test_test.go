@@ -171,3 +171,191 @@ func Test_ExecuteMultipleOutput(t *testing.T) {
 		}
 	}
 }
+
+func Test_toNumeric(t *testing.T) {
+
+	cases := []struct {
+		a     string
+		b     string
+		equal bool
+	}{
+		// tab prefix
+		{
+			a:     "\t24",
+			b:     "24",
+			equal: true,
+		},
+		{
+			a:     "24",
+			b:     "\t24",
+			equal: true,
+		},
+		{
+			a:     "\t24",
+			b:     "\t24",
+			equal: true,
+		},
+		{
+			a:     "\t24",
+			b:     "25",
+			equal: false,
+		},
+		{
+			a:     "24",
+			b:     "\t25",
+			equal: false,
+		},
+		{
+			a:     "\t24",
+			b:     "\t25",
+			equal: false,
+		},
+
+		// tab suffix
+		{
+			a:     "24\t",
+			b:     "24",
+			equal: true,
+		},
+		{
+			a:     "24",
+			b:     "24\t",
+			equal: true,
+		},
+		{
+			a:     "24\t",
+			b:     "24\t",
+			equal: true,
+		},
+		{
+			a:     "24\t",
+			b:     "25",
+			equal: false,
+		},
+		{
+			a:     "24",
+			b:     "25\t",
+			equal: false,
+		},
+		{
+			a:     "24\t",
+			b:     "25\t",
+			equal: false,
+		},
+
+		// space
+		{
+			a:     "24 ",
+			b:     "24",
+			equal: true,
+		},
+		{
+			a:     "24",
+			b:     "24 ",
+			equal: true,
+		},
+		{
+			a:     "24 ",
+			b:     "24 ",
+			equal: true,
+		},
+		{
+			a:     "24 ",
+			b:     "25",
+			equal: false,
+		},
+		{
+			a:     "24",
+			b:     "25 ",
+			equal: false,
+		},
+		{
+			a:     "24 ",
+			b:     "25 ",
+			equal: false,
+		},
+
+		// *nix new line
+		{
+			a:     "24\n",
+			b:     "24",
+			equal: true,
+		},
+		{
+			a:     "24",
+			b:     "24\n",
+			equal: true,
+		},
+		{
+			a:     "24\n",
+			b:     "24\n",
+			equal: true,
+		},
+		{
+			a:     "24\n",
+			b:     "25",
+			equal: false,
+		},
+		{
+			a:     "24",
+			b:     "25\n",
+			equal: false,
+		},
+		{
+			a:     "24\n",
+			b:     "25\n",
+			equal: false,
+		},
+
+		// Windows return char
+		{
+			a:     "24\r",
+			b:     "24",
+			equal: true,
+		},
+		{
+			a:     "24",
+			b:     "24\r",
+			equal: true,
+		},
+		{
+			a:     "24\r",
+			b:     "24\r",
+			equal: true,
+		},
+		{
+			a:     "24\r",
+			b:     "25",
+			equal: false,
+		},
+		{
+			a:     "24",
+			b:     "25\r",
+			equal: false,
+		},
+		{
+			a:     "24\r",
+			b:     "25\r",
+			equal: false,
+		},
+	}
+
+	for _, c := range cases {
+		ar, br, err := toNumeric(c.a, c.b)
+		if err != nil {
+			t.Errorf("Unexpected error: %v\n", err)
+			continue
+		}
+		if c.equal {
+			if ar != br {
+				t.Errorf("expected a:%q and b:%q to be equal\n", c.a, c.b)
+			}
+		} else {
+			if ar == br {
+				t.Errorf("expected a:%q and b:%q NOT to be equal\n", c.a, c.b)
+			}
+		}
+
+	}
+
+}
