@@ -37,6 +37,15 @@ var (
 	}
 )
 
+// OutputConfig represents values to be passed to
+// the OutputResults function.
+type OutputConfig struct {
+	JSONFmt           bool
+	NoRemediations    bool
+	IncludeTestOutput bool
+	OutputFile        string
+}
+
 func printlnWarn(msg string) {
 	fmt.Fprintf(os.Stderr, "[%s] %s\n",
 		colors[check.WARN].Sprintf("%s", check.WARN),
@@ -246,4 +255,22 @@ func PrintOutput(output string, outputFile string) {
 			continueWithError(err, sprintlnWarn(s))
 		}
 	}
+}
+
+func OutputResults(controls *check.Controls, summary check.Summary, cfg *OutputConfig) error {
+	// if we successfully ran some tests and it's json format, ignore the warnings
+	if (summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0 || summary.Info > 0) && cfg.JSONFmt {
+		out, err := controls.JSON()
+		if err != nil {
+			return err
+		}
+		if len(cfg.OutputFile) == 0 {
+			return fmt.Errorf("OutputConfig.OutputFile is required")
+		}
+		PrintOutput(string(out), cfg.OutputFile)
+	} else {
+		PrettyPrint(controls, summary, cfg.NoRemediations, cfg.IncludeTestOutput)
+	}
+
+	return nil
 }
