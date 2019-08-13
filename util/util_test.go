@@ -18,6 +18,8 @@ import (
 	"regexp"
 	"strconv"
 	"testing"
+
+	"github.com/aquasecurity/bench-common/check"
 )
 
 func TestCheckVersion(t *testing.T) {
@@ -127,5 +129,28 @@ func TestMultiWordReplace(t *testing.T) {
 				t.Fatalf("Expected %s got %s", c.output, s)
 			}
 		})
+	}
+}
+
+func TestOutputResultsJSON(t *testing.T) {
+	outcfg := &OutputConfig{
+		OutputFile: "/tmp/bench-common-tst1.jout",
+		JSONFmt:    true,
+	}
+	controls := &check.Controls{}
+	summary := check.Summary{}
+	err := OutputResults(controls, summary, outcfg)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestOutputResults(t *testing.T) {
+	outcfg := &OutputConfig{}
+	controls := &check.Controls{}
+	summary := check.Summary{}
+	err := OutputResults(controls, summary, outcfg)
+	if err != nil {
+		t.Error(err)
 	}
 }
