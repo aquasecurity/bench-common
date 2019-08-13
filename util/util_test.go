@@ -138,7 +138,11 @@ func TestOutputResultsJSON(t *testing.T) {
 		JSONFmt:    true,
 	}
 	controls := &check.Controls{}
-	summary := check.Summary{}
+	summary := check.Summary{
+		Pass: 10,
+		Fail: 0,
+		Warn: 2,
+	}
 	err := OutputResults(controls, summary, outcfg)
 	if err != nil {
 		t.Error(err)
@@ -148,7 +152,11 @@ func TestOutputResultsJSON(t *testing.T) {
 func TestOutputResults(t *testing.T) {
 	outcfg := &OutputConfig{}
 	controls := &check.Controls{}
-	summary := check.Summary{}
+	summary := check.Summary{
+		Pass: 10,
+		Fail: 0,
+		Warn: 2,
+	}
 	err := OutputResults(controls, summary, outcfg)
 	if err != nil {
 		t.Error(err)
