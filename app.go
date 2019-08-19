@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/aquasecurity/bench-common/check"
+	"github.com/aquasecurity/bench-common/outputter"
 	"github.com/aquasecurity/bench-common/util"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
-	"io/ioutil"
-	"os"
 )
 
 func app(cmd *cobra.Command, args []string) {
@@ -33,18 +35,13 @@ func Main(filePath string, constraints []string) {
 }
 
 func outputResults(controls *check.Controls, summary check.Summary) error {
-	// if we successfully ran some tests and it's json format, ignore the warnings
-	if (summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0 || summary.Info > 0) && jsonFmt {
-		out, err := controls.JSON()
-		if err != nil {
-			return err
-		}
-		util.PrintOutput(string(out), outputFile)
-	} else {
-		util.PrettyPrint(controls, summary, noRemediations, includeTestOutput)
+	config := map[string]string{
+		outputter.JSONFilenameKey:      outputFile,
+		outputter.NoRemediationsKey:    fmt.Sprintf("%t", noRemediations),
+		outputter.IncludeTestOutputKey: fmt.Sprintf("%t", includeTestOutput),
 	}
 
-	return nil
+	return outputter.OutputResults(controls, summary, config)
 }
 
 func runControls(controls *check.Controls, checkList string) check.Summary {
