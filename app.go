@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 
 	"github.com/aquasecurity/bench-common/check"
 	"github.com/aquasecurity/bench-common/outputter"
@@ -37,8 +38,8 @@ func Main(filePath string, constraints []string) {
 func outputResults(controls *check.Controls, summary check.Summary) error {
 	config := map[string]string{
 		outputter.JSONFilenameKey:      outputFile,
-		outputter.NoRemediationsKey:    fmt.Sprintf("%t", noRemediations),
-		outputter.IncludeTestOutputKey: fmt.Sprintf("%t", includeTestOutput),
+		outputter.NoRemediationsKey:    strconv.FormatBool(noRemediations),
+		outputter.IncludeTestOutputKey: strconv.FormatBool(includeTestOutput),
 	}
 
 	return outputter.OutputResults(controls, summary, config)

@@ -1,16 +1,27 @@
 package outputter
 
 import (
+	"bufio"
+	"fmt"
 	"io"
-
-	"github.com/aquasecurity/bench-common/util"
+	"os"
 )
 
 func OutputToFile(data, filename string) error {
-	util.PrintOutput(data, filename)
-	return nil
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	w := bufio.NewWriter(file)
+	return OutputToWriter(data, w)
 }
 
 func OutputToWriter(data string, w io.Writer) error {
-	return nil
+	_, err := fmt.Fprintln(w, output)
+	if err != nil {
+		return err
+	}
+	return w.Flush()
 }

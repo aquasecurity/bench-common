@@ -16,31 +16,37 @@ const NoRemediationsKey = "NoRemediationsKey"
 const IncludeTestOutputKey = "IncludeTestOutputKey"
 
 func (co *Console) Output(controls *check.Controls, summary check.Summary, maybeConfig ...map[string]string) error {
-	if len(maybeConfig) == 0 {
-		return fmt.Errorf("Console - Config parameters are required\n")
-	}
-	config := maybeConfig[0]
-
-	noRemediations := false
-	noRemediationsStr, found := config[NoRemediationsKey]
-	if found {
-		if b, err := strconv.ParseBool(noRemediationsStr); err == nil {
-			noRemediations = b
-		} else {
-			glog.V(2).Info(fmt.Sprintf("Console - Unable to convert %q to boolean\n", noRemediationsStr))
-		}
+	config, err := getFirstConfig(maybeConfig...)
+	if err != nil {
+		return fmt.Errorf("Console - %v", err)
 	}
 
-	includeTestOutput := false
-	includeTestOutputStr, found := config[IncludeTestOutputKey]
-	if !found {
-		if b, err := strconv.ParseBool(includeTestOutputStr); err == nil {
-			noRemediations = b
-		} else {
-			glog.V(2).Info(fmt.Sprintf("Console - Unable to convert %q to boolean\n", includeTestOutputStr))
-		}
+	noRemediations, err := getBool(NoRemediationsKey, config)
+	if err != nil {
+		glog.V(2).Info(fmt.Sprintf("Console - Unable to get %s from config: %v\n", NoRemediationsKey, err))
+	} 
+
+	includeTestOutput err := getBool(IncludeTestOutputKey, config)
+	if err != nil {
+		glog.V(2).Info(fmt.Sprintf("Console - Unable to get %s from config: %v\n", IncludeTestOutputKey, err))
 	}
 
 	util.PrettyPrint(controls, summary, noRemediations, includeTestOutput)
 	return nil
+}
+
+func getBool(k string, m map[string]string) (bool, error) {
+	retVal := false
+	bs, err := getMapValue(k,m)
+	if err != nil {
+		return false, err
+	}
+
+	if b, err := strconv.ParseBool(bs); err == nil {
+		retVal = b
+	} else {
+		return false, fmt.Errorf("Unable to convert %q to boolean", bs)
+	}
+
+	return false, retVal
 }

@@ -10,24 +10,33 @@ type JSON struct{}
 
 const JSONFilenameKey = "JSONFilenameKey"
 
+type Jsonner interface {
+	JSON() ([]byte, error)
+}
+
 func (jrp *JSON) Output(controls *check.Controls, summary check.Summary, maybeConfig ...map[string]string) error {
-	if len(maybeConfig) == 0 {
-		return fmt.Errorf("JSON - Config parameters are required")
+	config, err := getFirstConfig(maybeConfig...)
+	if err != nil {
+		return fmt.Errorf("JSON - %v", err)
 	}
-	config := maybeConfig[0]
-	outputFile, found := config[JSONFilenameKey]
-	if !found {
+
+	outputFile, err := getMapValue(JSONFilenameKey, config)
+	if err != nil {
 		return fmt.Errorf("JSON - Config parameter missing - %s", JSONFilenameKey)
 	}
 
-	out, err := controls.JSON()
+	out, err := convertToJSON(controls)
 	if err != nil {
-		return err
+		return fmt.Errorf("JSON - %v", err)
 	}
 
 	err = OutputToFile(string(out), outputFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("JSON - %v", err)
 	}
 	return nil
+}
+
+func convertToJSON(j Jsonner) ([]byte, error) {
+	return j.JSON()
 }
