@@ -7,39 +7,42 @@ import (
 	"os"
 )
 
-type FileWriter interface {
-	Write(data string) error
+type FileHandler interface {
+	Handle(data string) error
 }
 
-func File struct {
-	Filename string
+type File struct {
+	Filename    string
 	FileManager FileManager
 }
 
 func NewFile(filename string) *File {
 	return &File{
-		Filename: filename,
+		Filename:    filename,
 		FileManager: &FileDelegate{},
 	}
 }
 
-func (f *File) Write(data) error {
-	f, err := f.FileManager.ManageFile(f.filename)
+func (f *File) Handle(data string) error {
+	file, err := f.FileManager.ManageFile(f.Filename)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	return OutputToWriter(data, bufio.NewWriter(f))
+	w := bufio.NewWriter(file)
+	defer w.Flush()
+
+	return OutputToWriter(data, w)
 }
 
 type FileManager interface {
-	ManageFile(filename string) (*io.File, error)
+	ManageFile(filename string) (*os.File, error)
 }
 
-type FileDelegate struct {}
+type FileDelegate struct{}
 
-func (fd *FileDelegate) ManageFile(filename string) (*io.File, error) {
+func (fd *FileDelegate) ManageFile(filename string) (*os.File, error) {
 	file, err := os.Create(filename)
 	if err != nil {
 		return nil, err
@@ -48,9 +51,6 @@ func (fd *FileDelegate) ManageFile(filename string) (*io.File, error) {
 }
 
 func OutputToWriter(data string, w io.Writer) error {
-	_, err := fmt.Fprintln(w, output)
-	if err != nil {
-		return err
-	}
-	return w.Flush()
+	_, err := fmt.Fprintln(w, data)
+	return err
 }

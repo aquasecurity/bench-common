@@ -13,24 +13,27 @@ type JSONConverter interface {
 type JSONDelegate struct{}
 
 type JSON struct {
-	FileWriter *FileWriter
-	Converter  *JSONConverter
+	FileHandler FileHandler
+	Converter   JSONConverter
+	Filename    string
+	controls    *check.Controls
 }
 
 func NewJSON(outputFile string) *JSON {
 	return &JSON{
-		FileWriter: NewFile(outputfile),
-		Converter:  &JSONDelegate{},
+		FileHandler: NewFile(outputFile),
+		Converter:   &JSONDelegate{},
 	}
 }
 
-func (jrp *JSON) Output(controls *check.Controls, summary check.Summary) error {
-	if jrp.FileWriter == nil {
-		return fmt.Errorf("JSON - FileWriter is required")
-	}
+var ErrFileHandlerRequired = fmt.Errorf("JSON - FileHandler is required")
+var ErrConverterRequired = fmt.Errorf("JSON - Converter is required")
+var ErrMissingControls = fmt.Errorf("JSON - Controls are required")
 
-	if jrp.Converter == nil {
-		return fmt.Errorf("JSON - Converter is required")
+func (jrp *JSON) Output(controls *check.Controls, summary check.Summary) error {
+	jrp.controls = controls
+	if err := jrp.Validate(); err != nil {
+		return err
 	}
 
 	out, err := jrp.Converter.ConvertToJSON(controls)
@@ -38,7 +41,7 @@ func (jrp *JSON) Output(controls *check.Controls, summary check.Summary) error {
 		return fmt.Errorf("JSON - %v", err)
 	}
 
-	err = jrp.FileWriter.Write(string(out))
+	err = jrp.FileHandler.Handle(string(out))
 	if err != nil {
 		return fmt.Errorf("JSON - error Writing data: %v", err)
 	}
@@ -46,6 +49,24 @@ func (jrp *JSON) Output(controls *check.Controls, summary check.Summary) error {
 	return nil
 }
 
+func (jrp *JSON) Validate() error {
+	if jrp.controls == nil {
+		return ErrMissingControls
+	}
+
+	if jrp.FileHandler == nil {
+		return ErrFileHandlerRequired
+	}
+
+	if jrp.Converter == nil {
+		return ErrConverterRequired
+	}
+	return nil
+}
+
 func (jd *JSONDelegate) ConvertToJSON(controls *check.Controls) ([]byte, error) {
+	if controls == nil {
+		return nil, ErrMissingControls
+	}
 	return controls.JSON()
 }
