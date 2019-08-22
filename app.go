@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 
 	"github.com/aquasecurity/bench-common/check"
-	"github.com/aquasecurity/bench-common/outputter"
 	"github.com/aquasecurity/bench-common/util"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -36,13 +34,16 @@ func Main(filePath string, constraints []string) {
 }
 
 func outputResults(controls *check.Controls, summary check.Summary) error {
-	config := map[string]string{
-		outputter.JSONFilenameKey:      outputFile,
-		outputter.NoRemediationsKey:    strconv.FormatBool(noRemediations),
-		outputter.IncludeTestOutputKey: strconv.FormatBool(includeTestOutput),
+	config := &outputter.Config{
+		Console: &outputter.Console{
+			NoRemediations:    noRemediations,
+			IncludeTestOutput: includeTestOutput,
+		},
+		JSONFormat: jsonFmt,
 	}
+	o := outputter.BuildOutputter(config)
 
-	return outputter.OutputResults(controls, summary, config)
+	return o.Output(controls, summary)
 }
 
 func runControls(controls *check.Controls, checkList string) check.Summary {

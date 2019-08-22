@@ -6,37 +6,46 @@ import (
 	"github.com/aquasecurity/bench-common/check"
 )
 
-type JSON struct{}
-
-const JSONFilenameKey = "JSONFilenameKey"
-
-type Jsonner interface {
-	JSON() ([]byte, error)
+type JSONConverter interface {
+	ConvertToJSON(controls *check.Controls) ([]byte, error)
 }
 
-func (jrp *JSON) Output(controls *check.Controls, summary check.Summary, maybeConfig ...map[string]string) error {
-	config, err := getFirstConfig(maybeConfig...)
+type JSONDelegate struct{}
+
+type JSON struct {
+	FileWriter *FileWriter
+	Converter  *JSONConverter
+}
+
+func NewJSON(outputFile string) *JSON {
+	return &JSON{
+		FileWriter: NewFile(outputfile),
+		Converter:  &JSONDelegate{},
+	}
+}
+
+func (jrp *JSON) Output(controls *check.Controls, summary check.Summary) error {
+	if jrp.FileWriter == nil {
+		return fmt.Errorf("JSON - FileWriter is required")
+	}
+
+	if jrp.Converter == nil {
+		return fmt.Errorf("JSON - Converter is required")
+	}
+
+	out, err := jrp.Converter.ConvertToJSON(controls)
 	if err != nil {
 		return fmt.Errorf("JSON - %v", err)
 	}
 
-	outputFile, err := getMapValue(JSONFilenameKey, config)
+	err = jrp.FileWriter.Write(string(out))
 	if err != nil {
-		return fmt.Errorf("JSON - Config parameter missing - %s", JSONFilenameKey)
+		return fmt.Errorf("JSON - error Writing data: %v", err)
 	}
 
-	out, err := convertToJSON(controls)
-	if err != nil {
-		return fmt.Errorf("JSON - %v", err)
-	}
-
-	err = OutputToFile(string(out), outputFile)
-	if err != nil {
-		return fmt.Errorf("JSON - %v", err)
-	}
 	return nil
 }
 
-func convertToJSON(j Jsonner) ([]byte, error) {
-	return j.JSON()
+func (jd *JSONDelegate) ConvertToJSON(controls *check.Controls) ([]byte, error) {
+	return controls.JSON()
 }

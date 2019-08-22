@@ -2,4 +2,6 @@ package outputter
 
 import "testing"
 
-func TestOutputToWriter(t *testing.T) {}
+func TestOutputResults(t *testing.T) {
+
+}
