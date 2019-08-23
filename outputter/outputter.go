@@ -17,7 +17,7 @@ type Config struct {
 func BuildOutputter(controls *check.Controls, summary check.Summary, config *Config) Outputter {
 	if (summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0 || summary.Info > 0) && config.JSONFormat {
 		return NewJSON(config.JSON.Filename)
-	} else {
-		return NewConsole(config.Console.NoRemediations, config.Console.IncludeTestOutput)
 	}
+
+	return NewConsole(config.Console.NoRemediations, config.Console.IncludeTestOutput)
 }
