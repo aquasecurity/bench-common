@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/aquasecurity/bench-common/check"
+	"github.com/aquasecurity/bench-common/outputter"
 	"github.com/aquasecurity/bench-common/util"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -35,13 +36,13 @@ func Main(filePath string, constraints []string) {
 
 func outputResults(controls *check.Controls, summary check.Summary) error {
 	config := &outputter.Config{
-		Console: &outputter.Console{
+		Console: outputter.Console{
 			NoRemediations:    noRemediations,
 			IncludeTestOutput: includeTestOutput,
 		},
 		JSONFormat: jsonFmt,
 	}
-	o := outputter.BuildOutputter(config)
+	o := outputter.BuildOutputter(controls, summary, config)
 
 	return o.Output(controls, summary)
 }
