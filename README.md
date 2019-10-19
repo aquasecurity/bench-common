@@ -17,3 +17,6 @@
 1. go build
 1. docker build -t aquasecurity/app-bench .
 1. docker run -it aquasecurity/app-bench
+
+# License
+bench-common is licensed under the Apache License 2.0[https://github.com/aquasecurity/bench-common/blob/master/LICENSE]
