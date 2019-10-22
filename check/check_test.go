@@ -83,25 +83,6 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 				auditer:     Audit("ls /home | grep $USER"),
 			},
 		},
-		{
-			SubChecks: []*SubCheck{
-				{
-					BaseCheck{
-						Constraints: map[string][]string{"platform": []string{"ubuntu", "p"}},
-						Remediation: "Fake test, check that current user has home directory",
-						auditer:     Audit("ls /home | grep $USER"),
-					},
-				},
-				{
-					BaseCheck{
-						Constraints: map[string][]string{"platform": []string{"Fail", "ubuntu", "grub"}},
-						Remediation: "Fake test, check that current user has home directory",
-						auditer:     Audit("ls /home | grep $USER"),
-					},
-				},
-			},
-			Expected: nil,
-		},
 	}
 
 	for _, testCase := range testCases {
