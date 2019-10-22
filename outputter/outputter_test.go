@@ -103,3 +103,39 @@ func TestBuildOutputterConsole(t *testing.T) {
 		}
 	}
 }
+
+func TestBuildOutputterFunc(t *testing.T) {
+
+	testOutputFunc := func(controls *check.Controls, summary check.Summary) error {
+		return nil
+	}
+
+	testCases := []struct {
+		opf  OutputFunc
+		fail bool
+	}{
+		{
+			opf:  testOutputFunc,
+			fail: false,
+		},
+		{
+			fail: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		o, err := BuildOutputterFunc(tc.opf)
+		if tc.fail {
+			if err == nil {
+				t.Errorf("Expected Error returned")
+			}
+		}
+
+		if !tc.fail {
+			if o == nil {
+				t.Errorf("Expected Outputter to be returned")
+			}
+		}
+
+	}
+}

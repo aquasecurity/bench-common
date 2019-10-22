@@ -1,11 +1,19 @@
 package outputter
 
 import (
+	"fmt"
+
 	"github.com/aquasecurity/bench-common/check"
 )
 
 type Outputter interface {
 	Output(controls *check.Controls, summary check.Summary) error
+}
+
+type OutputFunc func(controls *check.Controls, summary check.Summary) error
+
+func (f OutputFunc) Output(controls *check.Controls, summary check.Summary) error {
+	return f(controls, summary)
 }
 
 type Config struct {
@@ -20,4 +28,12 @@ func BuildOutputter(controls *check.Controls, summary check.Summary, config *Con
 	}
 
 	return NewConsole(config.Console.NoRemediations, config.Console.IncludeTestOutput)
+}
+
+func BuildOutputterFunc(op func(controls *check.Controls, summary check.Summary) error) (Outputter, error) {
+	if op == nil {
+		return nil, fmt.Errorf("BuildOutputterFunc: nil outputter")
+	}
+
+	return OutputFunc(op), nil
 }
