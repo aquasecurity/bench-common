@@ -1,13 +1,14 @@
 package check
 
 import (
+	"testing"
+
 	"github.com/aquasecurity/bench-common/auditeval"
 	yaml "gopkg.in/yaml.v2"
-	"reflect"
-	"testing"
 )
 
-var testDefinedConstraints = map[string][]string{"platform": {"ubuntu", "rhel"}, "boot": {"grub"}}
+// For the tests, say that we are running on an ubuntu system using the grub bootloader
+var testDefinedConstraints = map[string][]string{"platform": {"ubuntu"}, "boot": {"grub"}}
 
 const def1 = `
 ---
@@ -54,42 +55,116 @@ func TestCheck_Run(t *testing.T) {
 func TestGetFirstValidSubCheck(t *testing.T) {
 	type TestCase struct {
 		SubChecks []*SubCheck
-		Chosen    *BaseCheck
-		Expected  *BaseCheck
+		Expected  bool
 	}
 
+	// For each test case, we want to find the first subcheck that matches the constraints in testDefinedConstraints
 	testCases := []TestCase{
 		{
+			// Expect to find the first test because it matches ubuntu
+			Expected: true,
 			SubChecks: []*SubCheck{
 				{
 					BaseCheck{
 						Constraints: map[string][]string{"platform": []string{"ubuntu"}},
-						Remediation: "Fake test, check that current user has home directory",
-						auditer:     Audit("ls /home | grep $USER"),
+						Remediation: "Expected",
 					},
 				},
 				{
 					BaseCheck{
-						Audit:       "ls /home | grep $USER",
-						Constraints: map[string][]string{"platform": []string{"Fail", "ubuntu", "grub"}},
-						Remediation: "Fake test, check that current user has home directory",
-						auditer:     Audit("ls /home | grep $USER"),
+						Constraints: map[string][]string{"platform": []string{"rhel"}},
+						Remediation: "Not expected",
 					},
 				},
 			},
-			Expected: &BaseCheck{
-				Constraints: map[string][]string{"platform": []string{"ubuntu"}},
-				Remediation: "Fake test, check that current user has home directory",
-				auditer:     Audit("ls /home | grep $USER"),
+		},
+		{
+			// Expect to find the second test because it matches ubuntu
+			Expected: true,
+			SubChecks: []*SubCheck{
+				{
+					BaseCheck{
+						Constraints: map[string][]string{"platform": []string{"rhel"}},
+						Remediation: "Not expected",
+					},
+				},
+				{
+					BaseCheck{
+						Constraints: map[string][]string{"platform": []string{"ubuntu"}},
+						Remediation: "Expected",
+					},
+				},
+			},
+		},
+		{
+			// Expect to find the second test because it matches ubuntu and grub
+			Expected: true,
+			SubChecks: []*SubCheck{
+				{
+					BaseCheck{
+						Constraints: map[string][]string{"platform": []string{"rhel"}},
+						Remediation: "Not expected",
+					},
+				},
+				{
+					BaseCheck{
+						Constraints: map[string][]string{"platform": []string{"ubuntu"}, "boot": []string{"grub"}},
+						Remediation: "Expected",
+					},
+				},
+			},
+		},
+		{
+			// Expect to find the second test because it matches ubuntu and grub
+			Expected: true,
+			SubChecks: []*SubCheck{
+				{
+					BaseCheck{
+						Constraints: map[string][]string{"platform": []string{"rhel"}},
+						Remediation: "Not expected",
+					},
+				},
+				{
+					BaseCheck{
+						Constraints: map[string][]string{"platform": []string{"ubuntu"}, "boot": []string{"grub", "also valid for something else"}},
+						Remediation: "Expected",
+					},
+				},
+			},
+		},
+		{
+			Expected: false,
+			SubChecks: []*SubCheck{
+				{
+					BaseCheck{
+						Constraints: map[string][]string{"platform": []string{"rhel", "another"}},
+						Remediation: "Not expected",
+					},
+				},
+				{
+					BaseCheck{
+						Constraints: map[string][]string{"platform": []string{"ubuntu"}, "boot": []string{"another"}},
+						Remediation: "Not expected",
+					},
+				},
 			},
 		},
 	}
 
-	for _, testCase := range testCases {
-		testCase.Chosen = getFirstValidSubCheck(testCase.SubChecks, testDefinedConstraints)
-
-		if !reflect.DeepEqual(testCase.Chosen, testCase.Expected) {
-			t.Errorf("test fail: expected: %v actual: %v\n", testCase.Chosen, testCase.Expected)
+	for ii, testCase := range testCases {
+		chosen := getFirstValidSubCheck(testCase.SubChecks, testDefinedConstraints)
+		if !testCase.Expected {
+			if chosen != nil {
+				t.Errorf("case %d didn't expect to find a matching case: %v\n", ii, chosen)
+			}
+		} else {
+			if chosen == nil {
+				t.Errorf("case %d expected to find a match but didn't", ii)
+			} else {
+				if chosen.Remediation != "Expected" {
+					t.Errorf("case %d unexpected test selected: actual: %v\n", ii, chosen)
+				}
+			}
 		}
 	}
 }
