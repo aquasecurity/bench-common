@@ -51,7 +51,7 @@ func (audit Audit) Execute(customConfig ...interface{}) (result string, errMessa
 		return result, errMessage, WARN
 	}
 
-	res, err := exec.Command("sh", "-c", string(audit) ).Output()
+	res, err := exec.Command("sh", "-c", string(audit) ).CombinedOutput()
 
 	if err != nil {
 		errMessage = err.Error()
