@@ -149,6 +149,30 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 				},
 			},
 		},
+		{
+			// Should match if there are no constraints on the test at all
+			Expected: true,
+			SubChecks: []*SubCheck{
+				{
+					BaseCheck{
+						Constraints: map[string][]string{},
+						Remediation: "Expected",
+					},
+				},
+			},
+		},
+		{
+			// Should not match if there are constraints on the test that aren't defined for this run
+			Expected: false,
+			SubChecks: []*SubCheck{
+				{
+					BaseCheck{
+						Constraints: map[string][]string{"something": []string{"not", "defined"}},
+						Remediation: "Expected",
+					},
+				},
+			},
+		},
 	}
 
 	for ii, testCase := range testCases {
