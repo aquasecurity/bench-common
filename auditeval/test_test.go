@@ -89,7 +89,7 @@ func Test_getFlagValue(t *testing.T) {
 	tests := []TestRegex{
 		{Input: "XXX: User=root XXX", Flag: "User", Expected: "root"},
 		{Input: "XXX: User=", Flag: "User", Expected: ""},
-		{Input: "XXX: User= AAA XXX", Flag: "User", Expected: ""},
+		{Input: "XXX: User= AAA XXX", Flag: "User", Expected: "AAA"},
 		{Input: "XXX: XXX User=some_user XXX", Flag: "User", Expected: "some_user"},
 		{Input: "--flag=AAA,BBB,CCC XXX", Flag: "--flag", Expected: "AAA,BBB,CCC"},
 		{Input: "--flag", Flag: "--flag", Expected: "--flag"},
