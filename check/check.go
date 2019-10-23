@@ -304,12 +304,12 @@ func isSubCheckCompatible(testConstraintKey string, testConstraintVals []string,
 
 	// For each constraint of the check under the specific key, check if its defined
 	for _, val := range testConstraintVals {
-		if !contains(definedConstraintsVals, val) {
-			return false
+		if contains(definedConstraintsVals, val) {
+			return true
 		}
 	}
 
-	return true
+	return false
 }
 
 func contains(arr []string, obj string) bool {
