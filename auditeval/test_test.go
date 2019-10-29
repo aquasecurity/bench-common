@@ -87,19 +87,59 @@ func Test_getFlagValue(t *testing.T) {
 	}
 
 	tests := []TestRegex{
+		// Check for expecting values after '=' with various space cases
 		{Input: "XXX: User=root XXX", Flag: "User", Expected: "root"},
+		{Input: "XXX: User =root XXX", Flag: "User", Expected: "root"},
+		{Input: "XXX: User= root XXX", Flag: "User", Expected: "root"},
+		{Input: "XXX: User = root XXX", Flag: "User", Expected: "root"},
+		{Input: "XXX: User =	root XXX", Flag: "User", Expected: "root"},
+		// Check for expecting values after ':' with various space cases
+		{Input: "XXX: User:root XXX", Flag: "User", Expected: "root"},
+		{Input: "XXX: User :root XXX", Flag: "User", Expected: "root"},
+		{Input: "XXX: User: root XXX", Flag: "User", Expected: "root"},
+		{Input: "XXX: User : root XXX", Flag: "User", Expected: "root"},
+		// Check for expecting values after '=' with various space cases
+		{Input: "XXX: User=root XXX", Flag: "User", Expected: "root"},
+		{Input: "XXX: User =root XXX", Flag: "User", Expected: "root"},
+		{Input: "XXX: User= root XXX", Flag: "User", Expected: "root"},
+		{Input: "XXX: User = root XXX", Flag: "User", Expected: "root"},
+		// Check for expecting values with '_' separating the values
+		{Input: "XXX: User=some_user XXX", Flag: "User", Expected: "some_user"},
+		{Input: "XXX: User =some_user XXX", Flag: "User", Expected: "some_user"},
+		{Input: "XXX: User= some_user XXX", Flag: "User", Expected: "some_user"},
+		{Input: "XXX: User = some_user XXX", Flag: "User", Expected: "some_user"},
+		// Check for expecting values with '.' separating the values
+		{Input: "XXX: User=some.user XXX", Flag: "User", Expected: "some.user"},
+		{Input: "XXX: User =some.user XXX", Flag: "User", Expected: "some.user"},
+		{Input: "XXX: User= some.user XXX", Flag: "User", Expected: "some.user"},
+		{Input: "XXX: User = some.user XXX", Flag: "User", Expected: "some.user"},
+		// Check for expecting values with ',' separating the values
+		{Input: "XXX: User=pikachu,charizard,bulbasaur XXX", Flag: "User", Expected: "pikachu,charizard,bulbasaur"},
+		{Input: "XXX: User =pikachu,charizard,bulbasaur XXX", Flag: "User", Expected: "pikachu,charizard,bulbasaur"},
+		{Input: "XXX: User= pikachu,charizard,bulbasaur XXX", Flag: "User", Expected: "pikachu,charizard,bulbasaur"},
+		{Input: "XXX: User = pikachu,charizard,bulbasaur XXX", Flag: "User", Expected: "pikachu,charizard,bulbasaur"},
+		// Check for expecting values with in "" separating the values
+		{Input: "XXX: User=\"some_user\" XXX", Flag: "User", Expected: "some_user"},
+		{Input: "XXX: User =\"some_user\" XXX", Flag: "User", Expected: "some_user"},
+		{Input: "XXX: User= \"some_user\" XXX", Flag: "User", Expected: "some_user"},
+		{Input: "XXX: User = \"some_user\" XXX", Flag: "User", Expected: "some_user"},
+		{Input: "XXX: User=\"gotta catch em all -,.+*1:\" XXX", Flag: "User", Expected: "gotta catch em all -,.+*1:"},
+		// Check for expecting int
+		{Input: "XXX: Value=123 XXX", Flag: "Value", Expected: "123"},
+		// Check for expecting int as string
+		{Input: "XXX: Value=\"123\" XXX", Flag: "Value", Expected: "123"},
+		// Check for empty values
 		{Input: "XXX: User=", Flag: "User", Expected: ""},
-		{Input: "XXX: User= AAA XXX", Flag: "User", Expected: "AAA"},
-		{Input: "XXX: XXX User=some_user XXX", Flag: "User", Expected: "some_user"},
-		{Input: "--flag=AAA,BBB,CCC XXX", Flag: "--flag", Expected: "AAA,BBB,CCC"},
+		{Input: "XXX: User= ", Flag: "User", Expected: ""},
+		// Check flag as is
 		{Input: "--flag", Flag: "--flag", Expected: "--flag"},
 		{Input: "XXX --flag AAA XXX", Flag: "--flag", Expected: "AAA"},
 		{Input: "XXX --AAA BBB", Flag: "XXX", Expected: "XXX"},
 		{Input: "XXX", Flag: "XXX", Expected: "XXX"},
 		{Input: "CCC XXX AAA BBB", Flag: "XXX", Expected: "AAA"},
+		// Check not false-positive results
 		{Input: "YXXX", Flag: "XXX", Expected: ""},
 		{Input: "XXXY", Flag: "XXX", Expected: ""},
-		{Input: "XXX: User=\"AAA BBB TEST\"", Flag: "User", Expected: "AAA BBB TEST"},
 	}
 
 	for i, test := range tests {
