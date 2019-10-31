@@ -22,3 +22,4 @@ jobs:
         go get -u golang.org/x/lint/golint
         go fmt ./...
         go list ./... | xargs -L1 golint
+        make
