@@ -133,6 +133,10 @@ func Test_getFlagValue(t *testing.T) {
 		{Input: "XXX: User= ", Flag: "User", Expected: ""},
 		// Check flag as is
 		{Input: "--flag", Flag: "--flag", Expected: "--flag"},
+		{Input: " --flag", Flag: "--flag", Expected: "--flag"},
+		{Input: "	--flag", Flag: "--flag", Expected: "--flag"},
+		{Input: "--flag ", Flag: "--flag", Expected: "--flag"},
+		{Input: "--flag		", Flag: "--flag", Expected: "--flag"},
 		{Input: "XXX --flag AAA XXX", Flag: "--flag", Expected: "AAA"},
 		{Input: "XXX --AAA BBB", Flag: "XXX", Expected: "XXX"},
 		{Input: "XXX", Flag: "XXX", Expected: "XXX"},
@@ -140,6 +144,11 @@ func Test_getFlagValue(t *testing.T) {
 		// Check not false-positive results
 		{Input: "YXXX", Flag: "XXX", Expected: ""},
 		{Input: "XXXY", Flag: "XXX", Expected: ""},
+		// Check for not catching flags that only contains partial flag
+		{Input: "XXX: someJunkUser=root XXX", Flag: "Junk", Expected: ""},
+		{Input: "XXX: someJunkUser =root XXX", Flag: "User", Expected: ""},
+		{Input: "XXX: someJunkUser= root XXX", Flag: "User", Expected: ""},
+		{Input: "XXX: someJunkUser = root XXX", Flag: "User", Expected: ""},
 	}
 
 	for i, test := range tests {
