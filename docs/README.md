@@ -1,3 +1,12 @@
+The CIS Benchmark recommends configurations to harden various 
+components, including Docker, Kubernetes, Linux, etc... 
+These recommendations are usually configuration options, and can be 
+specified by flags to binaries programs, or in configuration files.
+
+The Benchmark also provides commands to audit an installation, identify
+places where the security can be improved, and steps to remediate these
+identified problems.
+
 # Test and config files
 
 A typical `*-bench` project runs checks specified in `controls` files that are a YAML 
@@ -6,13 +15,10 @@ representation of the CIS Benchmark checks. There is a
 
 `controls` for the various versions of the benchmark can be found in directories
 with same name as the CIS versions under `cfg/`, for example `cfg/cis-1.4.0`.
-`controls` are also organized by distribution under the `cfg` directory, for
-example `cfg/rh-0.7`.
 
 ## Controls
 
-`controls` is a YAML document that contains checks that must be run against a 
-specific Kubernetes node type, master or node and version.
+`controls` is a YAML document containing the test definitions for a benchmark.
 
 `controls` is the fundamental input to a `*-bench` project. The following is a Kubernetes CIS Benchmark example 
 of `controls`:
@@ -62,26 +68,13 @@ groups:
 the `controls` components have an id and a text description which are displayed 
 in the `*-bench` project output.
 
-`type` specifies what kubernetes node type a `controls` is for. Possible values
-for `type` are `master` and `node`.
+`type` specifies the type a `controls` is for.
 
 ## Groups
 
 `groups` is list of subgroups which test the various Kubernetes components
 that run on the node type specified in the `controls`. 
 
-For example one subgroup checks parameters passed to the apiserver binary, while 
-another subgroup checks parameters passed to the controller-manager binary.
-
-```yml
-groups:
-- id: 1.1
-  text: API Server
-  # ...
-- id: 1.2
-  text: Scheduler
-  # ...
-```
 
 These subgroups have `id`, `text` fields which serve the same purposes described
 in the previous paragraphs. The most important part of the subgroup is the
@@ -109,15 +102,6 @@ The `*-bench` project supports running a subgroup by specifying the subgroup `id
 command line, with the flag `--group` or `-g`.
 
 ## Check
-
-The CIS Benchmark recommends configurations to harden various 
-components, including Docker, Kubernetes, Linux, etc... 
-These recommendations are usually configuration options, and can be 
-specified by flags to binaries programs, or in configuration files.
-
-The Benchmark also provides commands to audit an installation, identify
-places where the security can be improved, and steps to remediate these
-identified problems.
 
 In a `*-bench` project , a `check` object embodies a recommendation from the CIS benchmark.  This an example
 `check` object:
@@ -249,103 +233,3 @@ version specific config overwrite similar values in `cfg/config.yaml`.
 
 For specific ways to overwrite the config values, check the `docs/README.md` for 
 corresponding `*-bench` project.
-
-Below is the structure of `cfg/config.yaml`:
-
-```
-nodetype
-  |-- components
-    |-- component1
-  |-- component1
-    |-- bins
-    |-- defaultbin (optional)
-    |-- confs
-    |-- defaultconf (optional)
-    |-- svcs
-    |-- defaultsvc (optional)
-    |-- kubeconfig
-    |-- defaultkubeconfig (optional)
-```
-
-Every node type has a subsection that specifies the main configuration items.
-
-- `components`: A list of components for the node type. For example a Kubernetes master 
-  will have an entry for **apiserver**, **scheduler** and **controllermanager**.
-  
-  Each component has the following entries:
-
-- `bins`: A list of candidate binaries for a component. `*-bench` project checks this
-   list and selects the first binary that is running on the node.
-
-   If none of the binaries in `bins` list is running, the `*-bench` project checks if the
-   binary specified by `defaultbin` is running and terminates if none of the 
-   binaries in both `bins` and `defaultbin` is running.
-   
-   The selected binary for a component can be referenced in `controls` using a 
-   variable in the form `$<component>bin`. In the example below, we reference 
-   the selected API server binary with the variable `$apiserverbin` in an `audit`
-   command.
-   
-   ```yml
-   id: 1.1.1
-    text: "Ensure that the --anonymous-auth argument is set to false (Scored)"
-    audit: "ps -ef | grep $apiserverbin | grep -v grep"
-    # ...
-   ```
-   
-- `confs`: A list of candidate configuration files for a component. The `*-bench` project
-  checks this list and selects the first config file that is found on the node.
-  If none of the config files exists, The `*-bench` project defaults conf to the value
-  of `defaultconf`.
-  
-  The selected config for a component can be referenced in `controls` using a
-  variable in the form `$<component>conf`. In the example below we reference the 
-  selected API server config file with the variable `$apiserverconf` in an `audit`
-  command.
-  
-  ```yml
-  id: 1.4.1
-    text: "Ensure that the API server pod specification file permissions are
-    set to 644 or more restrictive (Scored)"
-    audit: "/bin/sh -c 'if test -e $apiserverconf; then stat -c %a $apiserverconf; fi'"
-  ```
-  
-- `svcs`:  A list of candidate unitfiles for a component. The `*-bench` project checks this 
-  list and selects the first unitfile that is found on the node. If none of the
-  unitfiles exists, The `*-bench` project defaults unitfile to the value of `defaultsvc`.
-  
-  The selected unitfile for a component can be referenced in `controls` via a
-  variable in the form `$<component>svc`. In the example below, the selected 
-  kubelet unitfile is referenced with `$kubeletsvc` in the `remediation` of the 
-  `check`.
-  
-  ```yml
-  id: 2.1.1
-    # ...
-    remediation: |
-      Edit the kubelet service file $kubeletsvc
-      on each worker node and set the below parameter in KUBELET_SYSTEM_PODS_ARGS variable.
-      --allow-privileged=false
-      Based on your system, restart the kubelet service. For example:
-      systemctl daemon-reload
-      systemctl restart kubelet.service
-    # ...
-  ```
-  
-  - `kubeconfig`: A list of candidate kubeconfig files for a component. The `*-bench` project
-    checks this list and selects the first file that is found on the node. If none
-    of the files exists, The `*-bench` project defaults kubeconfig to the value of 
-    `defaultkubeconfig`.
-    
-    The selected kubeconfig for a component can be referenced in `controls` with
-    a variable in the form `$<component>kubeconfig`. In the example below, the
-    selected kubelet kubeconfig is referenced with `$kubeletkubeconfig` in the
-    `audit` command.
-    
-    ```yml
-    id: 2.2.1
-      text: "Ensure that the kubelet.conf file permissions are set to 644 or
-      more restrictive (Scored)"
-      audit: "/bin/sh -c 'if test -e $kubeletkubeconfig; then stat -c %a $kubeletkubeconfig; fi'"
-      # ...
-    ```
