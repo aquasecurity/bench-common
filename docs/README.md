@@ -4,7 +4,7 @@ A typical `*-bench` project runs checks specified in `controls` files that are a
 representation of the CIS Benchmark checks. There is a 
 `controls` file per version and node type.
 
-`controls` for the various versions can be found in directories
+`controls` for the various versions of the benchmark can be found in directories
 with same name as the CIS versions under `cfg/`, for example `cfg/cis-1.4.0`.
 `controls` are also organized by distribution under the `cfg` directory, for
 example `cfg/rh-0.7`.
