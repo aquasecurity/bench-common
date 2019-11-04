@@ -15,7 +15,7 @@ example `cfg/rh-0.7`.
 specific Kubernetes node type, master or node and version.
 
 `controls` is the fundamental input to a `*-bench` project. The following is a Kubernetes CIS Benchmark example 
-of a basic `controls`:
+of `controls`:
 
 ```yml
 ---
