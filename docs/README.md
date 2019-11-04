@@ -119,7 +119,7 @@ The Benchmark also provides commands to audit an installation, identify
 places where the security can be improved, and steps to remediate these
 identified problems.
 
-In a `*-bench` project , `check` objects embody these recommendations.  This an example
+In a `*-bench` project , a `check` object embodies a recommendation from the CIS benchmark.  This an example
 `check` object:
 
 ```yml
