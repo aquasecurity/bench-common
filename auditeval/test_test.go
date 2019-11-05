@@ -149,6 +149,9 @@ func Test_getFlagValue(t *testing.T) {
 		{Input: "XXX: someJunkUser =root XXX", Flag: "User", Expected: ""},
 		{Input: "XXX: someJunkUser= root XXX", Flag: "User", Expected: ""},
 		{Input: "XXX: someJunkUser = root XXX", Flag: "User", Expected: ""},
+		{Input: "XXX: someJunkUser root XXX", Flag: "User", Expected: ""},
+		// Check for junk and valid flags at the same time
+		{Input: "XXX: someJunkUser User root XXX", Flag: "User", Expected: "root"},
 	}
 
 	for i, test := range tests {
