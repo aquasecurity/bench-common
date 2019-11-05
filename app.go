@@ -42,7 +42,7 @@ func outputResults(controls *check.Controls, summary check.Summary) error {
 		},
 		JSONFormat: jsonFmt,
 	}
-	o := outputter.BuildOutputter(controls, summary, config)
+	o := outputter.BuildOutputter(summary, config)
 
 	return o.Output(controls, summary)
 }

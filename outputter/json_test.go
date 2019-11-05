@@ -1,7 +1,6 @@
 package outputter
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 
@@ -34,43 +33,35 @@ func (cj *mockConverter) ConvertToJSON(controls *check.Controls) ([]byte, error)
 
 func TestOutput(t *testing.T) {
 	cases := []struct {
+		n             string
 		json          *JSON
 		expectedError error
 		fail          bool
 		controls      *check.Controls
 	}{
 		{
+			n:             "errFileHandlerRequired",
 			json:          &JSON{},
-			expectedError: ErrFileHandlerRequired,
+			expectedError: errFileHandlerRequired,
 			controls:      &check.Controls{},
 		},
 		{
-			json: &JSON{
-				FileHandler: &mockFile{},
-			},
-			expectedError: ErrConverterRequired,
-			controls:      &check.Controls{},
-		},
-		{
+			n: "fileHandlerProvidedFailed",
 			json: &JSON{
 				FileHandler: &mockFile{
 					fail: false,
 				},
-				Converter: &mockConverter{
-					fail: true,
-				},
 			},
-			fail:     true,
-			controls: &check.Controls{},
+			fail: true,
 		},
 		{
+			n: "fileHandlerProvidedPass",
 			json: &JSON{
 				FileHandler: &mockFile{
 					fail: false,
 				},
-				Converter: &JSONDelegate{},
 			},
-			expectedError: ErrMissingControls,
+			expectedError: errMissingControls,
 		},
 	}
 	summary := check.Summary{}
@@ -83,33 +74,10 @@ func TestOutput(t *testing.T) {
 			}
 		} else if c.fail {
 			if err == nil {
-				t.Errorf("Expected Error to be returned")
+				t.Errorf("%s - Expected Error to be returned", c.n)
 			}
 		} else if err != nil {
-			t.Fatalf("Unexpected Test Error: %v", err)
+			t.Fatalf("%s - Unexpected Test Error: %v", c.n, err)
 		}
-	}
-}
-
-func TestConvertToJSON(t *testing.T) {
-	jd := &JSONDelegate{}
-	_, err := jd.ConvertToJSON(nil)
-	if err == nil {
-		t.Errorf("Expected Error %q but got %q", ErrMissingControls, err)
-	}
-
-	jd = &JSONDelegate{}
-	controls := &check.Controls{
-		ID:          "12121",
-		Description: "testControl",
-	}
-	d, err := jd.ConvertToJSON(controls)
-	if err != nil {
-		t.Errorf("Expected Error %q but got %q", ErrMissingControls, err)
-	}
-
-	expectedOutput := []byte(`{"id":"12121","text":"testControl","tests":null,"total_pass":0,"total_fail":0,"total_warn":0,"total_info":0,"DefinedConstraints":null}`)
-	if !bytes.Equal(expectedOutput, d) {
-		t.Errorf("%q != %q ", expectedOutput, d)
 	}
 }

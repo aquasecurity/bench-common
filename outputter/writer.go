@@ -7,22 +7,16 @@ import (
 	"os"
 )
 
-var ErrMissingFilename = fmt.Errorf("File - Filename is required")
-var ErrMissingFileManager = fmt.Errorf("File - FileManager is required")
-var ErrMissingIOWriter = fmt.Errorf("File - IOWriter is required")
+var errMissingFilename = fmt.Errorf("filename is required")
+var errMissingIOWriter = fmt.Errorf("IOWriter is required")
 
 type FileHandler interface {
 	Handle(data string) error
 }
 
 type File struct {
-	Filename    string
-	FileManager FileManager
-	IOWriter    IOWriter
-}
-
-type FileManager interface {
-	ManageFile(filename string) (*os.File, error)
+	Filename string
+	IOWriter IOWriter
 }
 
 type FileDelegate struct{}
@@ -35,17 +29,16 @@ type IOWriteDelegate struct{}
 
 func NewFile(filename string) *File {
 	return &File{
-		Filename:    filename,
-		FileManager: &FileDelegate{},
-		IOWriter:    &IOWriteDelegate{},
+		Filename: filename,
+		IOWriter: &IOWriteDelegate{},
 	}
 }
 
 func (f *File) Handle(data string) error {
-	if err := f.Validate(); err != nil {
+	if err := f.validate(); err != nil {
 		return err
 	}
-	file, err := f.FileManager.ManageFile(f.Filename)
+	file, err := os.Create(f.Filename)
 	if err != nil {
 		return err
 	}
@@ -57,28 +50,16 @@ func (f *File) Handle(data string) error {
 	return f.IOWriter.OutputToWriter(data, w)
 }
 
-func (f *File) Validate() error {
+func (f *File) validate() error {
 	if f.Filename == "" {
-		return ErrMissingFilename
-	}
-
-	if f.FileManager == nil {
-		return ErrMissingFileManager
+		return errMissingFilename
 	}
 
 	if f.IOWriter == nil {
-		return ErrMissingIOWriter
+		return errMissingIOWriter
 	}
 
 	return nil
-}
-
-func (fd *FileDelegate) ManageFile(filename string) (*os.File, error) {
-	file, err := os.Create(filename)
-	if err != nil {
-		return nil, err
-	}
-	return file, nil
 }
 
 func (iowd *IOWriteDelegate) OutputToWriter(data string, w io.Writer) error {

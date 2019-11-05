@@ -37,8 +37,7 @@ func TestHandle(t *testing.T) {
 
 	//  ErrMissingIOWriter
 	file = &File{
-		Filename:    testFilename,
-		FileManager: &FileDelegate{},
+		Filename: testFilename,
 	}
 	err = file.Handle(testData)
 	if err == nil {
@@ -47,9 +46,8 @@ func TestHandle(t *testing.T) {
 
 	// Check file output
 	file = &File{
-		Filename:    testFilename,
-		FileManager: &FileDelegate{},
-		IOWriter:    &IOWriteDelegate{},
+		Filename: testFilename,
+		IOWriter: &IOWriteDelegate{},
 	}
 	err = file.Handle(testData)
 	if err != nil {

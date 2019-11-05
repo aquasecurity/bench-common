@@ -8,13 +8,11 @@ import (
 
 func TestBuildOutputterJSON(t *testing.T) {
 	testCases := []struct {
-		controls *check.Controls
-		summary  check.Summary
-		config   *Config
-		match    bool
+		summary check.Summary
+		config  *Config
+		match   bool
 	}{
 		{
-			controls: &check.Controls{},
 			summary: check.Summary{
 				Pass: 1,
 			},
@@ -24,7 +22,6 @@ func TestBuildOutputterJSON(t *testing.T) {
 			match: true,
 		},
 		{
-			controls: &check.Controls{},
 			summary: check.Summary{
 				Pass: 1,
 			},
@@ -32,14 +29,12 @@ func TestBuildOutputterJSON(t *testing.T) {
 			match:  false,
 		},
 		{
-			controls: &check.Controls{},
-			summary:  check.Summary{},
-			config:   &Config{},
-			match:    false,
+			summary: check.Summary{},
+			config:  &Config{},
+			match:   false,
 		},
 		{
-			controls: &check.Controls{},
-			summary:  check.Summary{},
+			summary: check.Summary{},
 			config: &Config{
 				JSONFormat: true,
 			},
@@ -48,7 +43,7 @@ func TestBuildOutputterJSON(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		o := BuildOutputter(tc.controls, tc.summary, tc.config)
+		o := BuildOutputter(tc.summary, tc.config)
 		if _, match := o.(*JSON); tc.match != match {
 			t.Errorf("TestBuildOutputterJSON - Wrong Type returned")
 		}
@@ -57,13 +52,11 @@ func TestBuildOutputterJSON(t *testing.T) {
 
 func TestBuildOutputterConsole(t *testing.T) {
 	testCases := []struct {
-		controls *check.Controls
-		summary  check.Summary
-		config   *Config
-		match    bool
+		summary check.Summary
+		config  *Config
+		match   bool
 	}{
 		{
-			controls: &check.Controls{},
 			summary: check.Summary{
 				Pass: 1,
 			},
@@ -73,7 +66,6 @@ func TestBuildOutputterConsole(t *testing.T) {
 			match: false,
 		},
 		{
-			controls: &check.Controls{},
 			summary: check.Summary{
 				Pass: 1,
 			},
@@ -81,14 +73,12 @@ func TestBuildOutputterConsole(t *testing.T) {
 			match:  true,
 		},
 		{
-			controls: &check.Controls{},
-			summary:  check.Summary{},
-			config:   &Config{},
-			match:    true,
+			summary: check.Summary{},
+			config:  &Config{},
+			match:   true,
 		},
 		{
-			controls: &check.Controls{},
-			summary:  check.Summary{},
+			summary: check.Summary{},
 			config: &Config{
 				JSONFormat: true,
 			},
@@ -97,7 +87,7 @@ func TestBuildOutputterConsole(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		o := BuildOutputter(tc.controls, tc.summary, tc.config)
+		o := BuildOutputter(tc.summary, tc.config)
 		if _, match := o.(*Console); tc.match != match {
 			t.Errorf("TestBuildOutputterConsole - Wrong Type returned")
 		}

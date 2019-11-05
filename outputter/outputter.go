@@ -22,7 +22,7 @@ type Config struct {
 	JSONFormat bool
 }
 
-func BuildOutputter(controls *check.Controls, summary check.Summary, config *Config) Outputter {
+func BuildOutputter(summary check.Summary, config *Config) Outputter {
 	if (summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0 || summary.Info > 0) && config.JSONFormat {
 		return NewJSON(config.JSON.Filename)
 	}

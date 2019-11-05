@@ -6,15 +6,8 @@ import (
 	"github.com/aquasecurity/bench-common/check"
 )
 
-type JSONConverter interface {
-	ConvertToJSON(controls *check.Controls) ([]byte, error)
-}
-
-type JSONDelegate struct{}
-
 type JSON struct {
 	FileHandler FileHandler
-	Converter   JSONConverter
 	Filename    string
 	controls    *check.Controls
 }
@@ -22,21 +15,19 @@ type JSON struct {
 func NewJSON(outputFile string) *JSON {
 	return &JSON{
 		FileHandler: NewFile(outputFile),
-		Converter:   &JSONDelegate{},
 	}
 }
 
-var ErrFileHandlerRequired = fmt.Errorf("JSON - FileHandler is required")
-var ErrConverterRequired = fmt.Errorf("JSON - Converter is required")
-var ErrMissingControls = fmt.Errorf("JSON - Controls are required")
+var errFileHandlerRequired = fmt.Errorf("fileHandler is required")
+var errMissingControls = fmt.Errorf("controls are required")
 
 func (jrp *JSON) Output(controls *check.Controls, summary check.Summary) error {
 	jrp.controls = controls
-	if err := jrp.Validate(); err != nil {
+	if err := jrp.validate(); err != nil {
 		return err
 	}
 
-	out, err := jrp.Converter.ConvertToJSON(controls)
+	out, err := controls.JSON()
 	if err != nil {
 		return fmt.Errorf("JSON - %v", err)
 	}
@@ -49,24 +40,14 @@ func (jrp *JSON) Output(controls *check.Controls, summary check.Summary) error {
 	return nil
 }
 
-func (jrp *JSON) Validate() error {
+func (jrp *JSON) validate() error {
 	if jrp.controls == nil {
-		return ErrMissingControls
+		return errMissingControls
 	}
 
 	if jrp.FileHandler == nil {
-		return ErrFileHandlerRequired
+		return errFileHandlerRequired
 	}
 
-	if jrp.Converter == nil {
-		return ErrConverterRequired
-	}
 	return nil
-}
-
-func (jd *JSONDelegate) ConvertToJSON(controls *check.Controls) ([]byte, error) {
-	if controls == nil {
-		return nil, ErrMissingControls
-	}
-	return controls.JSON()
 }
