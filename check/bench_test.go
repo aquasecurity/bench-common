@@ -65,16 +65,16 @@ func TestRegisterAuditType(t *testing.T) {
 	}
 
 }
-type IpAuditMock struct {
-	Url string
+
+type ipAuditMock struct {
+	URL string
 }
 
-func ( a IpAuditMock) Execute(customConfig ...interface{}) (result string, errMessage string, state State) {
+func (a ipAuditMock) Execute(customConfig ...interface{}) (result string, errMessage string, state State) {
 	//I don't really implement checking ip here, since the goal of this mock to test custom audit type
 	return "", "", PASS
 }
 func TestNewControlsType(t *testing.T) {
-
 
 	type args struct {
 		in          []byte
@@ -93,7 +93,7 @@ func TestNewControlsType(t *testing.T) {
 			false},
 	}
 	b := NewBench()
-	b.RegisterAuditType("check_ip" , func() interface{} {return &IpAuditMock{}})
+	b.RegisterAuditType("check_ip", func() interface{} { return &ipAuditMock{} })
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := b.NewControls(tt.args.in, tt.args.definitions)
@@ -104,7 +104,6 @@ func TestNewControlsType(t *testing.T) {
 		})
 	}
 }
-
 
 func TestExtractAllAuditsForDefaultBench(t *testing.T) {
 
@@ -139,20 +138,20 @@ func TestExtractAllAuditsForDefaultBench(t *testing.T) {
 			}
 
 			for _, s := range c.SubChecks {
-					if s.auditer == nil {
-						t.Errorf("ID %s: Unexpected nil auditer", c.ID)
-						continue
-					}
-					audit, ok := s.auditer.(Audit)
-					if !ok {
-						t.Errorf("ID %s: Couldn't convert auditer %v to Audit", c.ID, s.auditer)
-					}
-					if s.Audit == nil && string(audit) == "" { // nothing to check when no audit attribute in check
-						continue
-					}
-					if string(audit) != fmt.Sprintf("%v", s.Audit) {
-						t.Errorf("ID %s: extracted audit %s, expected %v", c.ID, string(audit), s.Audit)
-					}
+				if s.auditer == nil {
+					t.Errorf("ID %s: Unexpected nil auditer", c.ID)
+					continue
+				}
+				audit, ok := s.auditer.(Audit)
+				if !ok {
+					t.Errorf("ID %s: Couldn't convert auditer %v to Audit", c.ID, s.auditer)
+				}
+				if s.Audit == nil && string(audit) == "" { // nothing to check when no audit attribute in check
+					continue
+				}
+				if string(audit) != fmt.Sprintf("%v", s.Audit) {
+					t.Errorf("ID %s: extracted audit %s, expected %v", c.ID, string(audit), s.Audit)
+				}
 			}
 		}
 	}

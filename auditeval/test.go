@@ -44,13 +44,14 @@ type compare struct {
 	Value string
 }
 
-type testOutput struct {
+// TestOutput represents output from tests
+type TestOutput struct {
 	TestResult     bool
 	ActualResult   string
 	ExpectedResult string
 }
 
-func (t *testItem) execute(s string, isMultipleOutput bool) (result testOutput, err error) {
+func (t *testItem) execute(s string, isMultipleOutput bool) (result TestOutput, err error) {
 	s = strings.TrimRight(s, " \n")
 
 	// If the test has output that should be evaluated for each row
@@ -79,8 +80,9 @@ type Tests struct {
 	BinOp     binOp       `yaml:"bin_op"`
 }
 
-func (ts *Tests) Execute(s, testId string, isMultipleOutput bool) *testOutput {
-	finalOutput := &testOutput{}
+// Execute perfoms benchmark tests
+func (ts *Tests) Execute(s, testID string, isMultipleOutput bool) *TestOutput {
+	finalOutput := &TestOutput{}
 	var result bool
 	var err error
 
@@ -88,7 +90,7 @@ func (ts *Tests) Execute(s, testId string, isMultipleOutput bool) *testOutput {
 		return finalOutput
 	}
 
-	res := make([]testOutput, len(ts.TestItems))
+	res := make([]TestOutput, len(ts.TestItems))
 	if len(res) == 0 {
 		return finalOutput
 	}
@@ -96,7 +98,7 @@ func (ts *Tests) Execute(s, testId string, isMultipleOutput bool) *testOutput {
 	for i, t := range ts.TestItems {
 		res[i], err = t.execute(s, isMultipleOutput)
 		if err != nil {
-			glog.V(2).Infof("Failed running test %s. %s", testId, err)
+			glog.V(2).Infof("Failed running test %s. %s", testID, err)
 		}
 	}
 

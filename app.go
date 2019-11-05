@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/aquasecurity/bench-common/check"
 	"github.com/aquasecurity/bench-common/util"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
-	"io/ioutil"
-	"os"
 )
 
 func app(cmd *cobra.Command, args []string) {
@@ -19,6 +20,7 @@ func app(cmd *cobra.Command, args []string) {
 	Main(cfgFile, define)
 }
 
+// Main entry point for benchmark functionality
 func Main(filePath string, constraints []string) {
 	controls, err := getControls(filePath, constraints)
 	if err != nil {
