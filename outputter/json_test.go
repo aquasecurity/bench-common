@@ -40,6 +40,13 @@ func TestOutput(t *testing.T) {
 		controls      *check.Controls
 	}{
 		{
+			n: "happy path",
+			json: &JSON{
+				FileHandler: &mockFile{fail:false},
+			},
+			controls: &check.Controls{},
+		},
+		{
 			n:             "errFileHandlerRequired",
 			json:          &JSON{},
 			expectedError: errFileHandlerRequired,
