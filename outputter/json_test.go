@@ -18,19 +18,6 @@ func (mf *mockFile) Handle(data string) error {
 	return nil
 }
 
-type mockConverter struct {
-	fail bool
-}
-
-var errorTestFailedToConvert = fmt.Errorf("Failed to ConvertToJSON data")
-
-func (cj *mockConverter) ConvertToJSON(controls *check.Controls) ([]byte, error) {
-	if cj.fail {
-		return nil, errorTestFailedToConvert
-	}
-	return nil, nil
-}
-
 func TestOutput(t *testing.T) {
 	cases := []struct {
 		n             string
