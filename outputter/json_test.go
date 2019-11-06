@@ -29,7 +29,7 @@ func TestOutput(t *testing.T) {
 		{
 			n: "happy path",
 			json: &JSON{
-				FileHandler: &mockFile{fail:false},
+				fileHandler: &mockFile{fail: false},
 			},
 			controls: &check.Controls{},
 		},
@@ -42,7 +42,7 @@ func TestOutput(t *testing.T) {
 		{
 			n: "fileHandlerProvidedFailed",
 			json: &JSON{
-				FileHandler: &mockFile{
+				fileHandler: &mockFile{
 					fail: false,
 				},
 			},
@@ -51,7 +51,7 @@ func TestOutput(t *testing.T) {
 		{
 			n: "fileHandlerProvidedPass",
 			json: &JSON{
-				FileHandler: &mockFile{
+				fileHandler: &mockFile{
 					fail: false,
 				},
 			},

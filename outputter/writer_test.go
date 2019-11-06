@@ -20,36 +20,36 @@ func TestHandle(t *testing.T) {
 	testFilename := filepath.Join(dir, "test.json")
 
 	//  ErrMissingFilename
-	file := &File{}
-	err = file.Handle(testData)
+	f := &file{}
+	err = f.Handle(testData)
 	if err == nil {
 		t.Errorf("Unable to handle: %v", err)
 	}
 
 	//  ErrMissingFileManager
-	file = &File{
+	f = &file{
 		Filename: testFilename,
 	}
-	err = file.Handle(testData)
+	err = f.Handle(testData)
 	if err == nil {
 		t.Errorf("Unable to handle: %v", err)
 	}
 
 	//  ErrMissingIOWriter
-	file = &File{
+	f = &file{
 		Filename: testFilename,
 	}
-	err = file.Handle(testData)
+	err = f.Handle(testData)
 	if err == nil {
 		t.Errorf("Unable to handle: %v", err)
 	}
 
 	// Check file output
-	file = &File{
+	f = &file{
 		Filename: testFilename,
-		IOWriter: &IOWriteDelegate{},
+		ioWriter: &ioWriteDelegate{},
 	}
-	err = file.Handle(testData)
+	err = f.Handle(testData)
 	if err != nil {
 		t.Errorf("Unable to handle: %v", err)
 	}

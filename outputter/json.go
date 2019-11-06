@@ -6,21 +6,24 @@ import (
 	"github.com/aquasecurity/bench-common/check"
 )
 
+// JSON outputter functionality for JSON payload
 type JSON struct {
-	FileHandler FileHandler
+	fileHandler fileHandler
 	Filename    string
 	controls    *check.Controls
 }
 
+// NewJSON creates new Outputter of type JSON
 func NewJSON(outputFile string) *JSON {
 	return &JSON{
-		FileHandler: NewFile(outputFile),
+		fileHandler: newFile(outputFile),
 	}
 }
 
 var errFileHandlerRequired = fmt.Errorf("fileHandler is required")
 var errMissingControls = fmt.Errorf("controls are required")
 
+// Output displays Control results as JSON payload
 func (jrp *JSON) Output(controls *check.Controls, summary check.Summary) error {
 	jrp.controls = controls
 	if err := jrp.validate(); err != nil {
@@ -32,7 +35,7 @@ func (jrp *JSON) Output(controls *check.Controls, summary check.Summary) error {
 		return fmt.Errorf("JSON - %v", err)
 	}
 
-	err = jrp.FileHandler.Handle(string(out))
+	err = jrp.fileHandler.Handle(string(out))
 	if err != nil {
 		return fmt.Errorf("JSON - error Writing data: %v", err)
 	}
@@ -45,7 +48,7 @@ func (jrp *JSON) validate() error {
 		return errMissingControls
 	}
 
-	if jrp.FileHandler == nil {
+	if jrp.fileHandler == nil {
 		return errFileHandlerRequired
 	}
 
