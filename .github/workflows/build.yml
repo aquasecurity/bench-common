@@ -20,6 +20,4 @@ jobs:
       run: |
         export PATH=$HOME/go/bin:$PATH
         go get -u golang.org/x/lint/golint
-        go fmt ./...
-        golint -set_exit_status ./...
-        make
+        make lint && make
