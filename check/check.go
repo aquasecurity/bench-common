@@ -82,7 +82,7 @@ func handleError(err error, context string) (errmsg string) {
 	return
 }
 
-// BaseCheck Old version - checks don't have sub checks, each check has only one sub check as part of the check itself
+// BaseCheck (Original version) - checks don't have sub checks, each check has only one sub check as part of the check itself
 type BaseCheck struct {
 	AuditType     AuditType           `json:"audit_type"`
 	Audit         interface{}         `json:"audit"`
