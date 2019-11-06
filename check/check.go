@@ -26,12 +26,17 @@ import (
 
 // State is the state of a control check.
 type State string
+
+// AuditType is the type of audit to test.
 type AuditType string
 
+// TypeAudit string representing default "Audit".
 const TypeAudit = "audit"
 
+// Audit string that holds audit to execute.
 type Audit string
 
+// Execute method called by the main logic to execute the Audit's Execute type.
 func (audit Audit) Execute(customConfig ...interface{}) (result string, errMessage string, state State) {
 
 	commands := textToCommand(string(audit))
@@ -51,7 +56,7 @@ func (audit Audit) Execute(customConfig ...interface{}) (result string, errMessa
 		return result, errMessage, WARN
 	}
 
-	res, err := exec.Command("sh", "-c", string(audit) ).CombinedOutput()
+	res, err := exec.Command("sh", "-c", string(audit)).CombinedOutput()
 
 	if err != nil {
 		errMessage = err.Error()
@@ -77,7 +82,7 @@ func handleError(err error, context string) (errmsg string) {
 	return
 }
 
-// Old version - checks don't have sub checks, each check has only one sub check as part of the check itself
+// BaseCheck (Original version) - checks don't have sub checks, each check has only one sub check as part of the check itself
 type BaseCheck struct {
 	AuditType     AuditType           `json:"audit_type"`
 	Audit         interface{}         `json:"audit"`
@@ -90,6 +95,7 @@ type BaseCheck struct {
 	customConfigs []interface{}
 }
 
+// SubCheck additional check to be performed.
 type SubCheck struct {
 	BaseCheck `yaml:"check"`
 }
@@ -99,7 +105,7 @@ type Check struct {
 	ID             string           `yaml:"id" json:"test_number"`
 	Description    string           `json:"test_desc"`
 	Set            bool             `json:"omit"`
-	SubChecks      []*SubCheck       `yaml:"sub_checks"`
+	SubChecks      []*SubCheck      `yaml:"sub_checks"`
 	AuditType      AuditType        `json:"audit_type"`
 	Audit          interface{}      `json:"omit"`
 	Type           string           `json:"type"`

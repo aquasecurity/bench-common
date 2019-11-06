@@ -21,6 +21,7 @@ func app(cmd *cobra.Command, args []string) {
 	Main(cfgFile, define)
 }
 
+// Main entry point for benchmark functionality
 func Main(filePath string, constraints []string) {
 	controls, err := getControls(filePath, constraints)
 	if err != nil {

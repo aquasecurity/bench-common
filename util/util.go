@@ -67,6 +67,7 @@ func continueWithError(err error, msg string) string {
 	return ""
 }
 
+// CleanIDs cleans ids from provided list
 func CleanIDs(list string) []string {
 	list = strings.Trim(list, ",")
 	ids := strings.Split(list, ",")
@@ -84,7 +85,7 @@ func colorPrint(state check.State, s string) {
 	fmt.Printf("%s", s)
 }
 
-// prettyPrint outputs the results to stdout in human-readable format
+// PrettyPrint outputs the results to stdout in human-readable format
 func PrettyPrint(r *check.Controls, summary check.Summary, noRemediations, includeTestOutput bool) {
 	colorPrint(check.INFO, fmt.Sprintf("%s %s\n", r.ID, r.Description))
 	for _, g := range r.Groups {
@@ -173,6 +174,7 @@ func writeOutputToFile(output string, outputFile string) error {
 	return w.Flush()
 }
 
+// PrintOutput writes data to the specified file
 func PrintOutput(output string, outputFile string) {
 	if len(outputFile) == 0 {
 		fmt.Println(output)

@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package check
 
 import (
@@ -21,6 +22,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Bench implementer of this interface represent audit types to be tests.
 type Bench interface {
 	RegisterAuditType(auditType AuditType, typeCallback func() interface{}) error
 	NewControls(in []byte, definitions []string, customConfigs ...interface{}) (*Controls, error)
@@ -30,8 +32,9 @@ type bench struct {
 	auditTypeRegistry map[AuditType]func() interface{}
 }
 
+// NewBench returns a new Bench
 func NewBench() Bench {
-	return &bench{auditTypeRegistry:make(map[AuditType]func() interface{})}
+	return &bench{auditTypeRegistry: make(map[AuditType]func() interface{})}
 }
 
 func (b *bench) RegisterAuditType(auditType AuditType, typeCallback func() interface{}) error {

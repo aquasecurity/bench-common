@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 )
 
+// Auditer represents the Execute method to be called.
 type Auditer interface {
 	Execute(customConfig ...interface{}) (result string, errMsg string, state State)
 }
@@ -40,17 +41,11 @@ type Summary struct {
 	Info int `json:"total_info"`
 }
 
-
-
-
 var defaultBench bench // for backward compatibility
 // NewControls instantiates a new master Controls object.
 func NewControls(in []byte, definitions []string) (*Controls, error) {
-	return defaultBench.NewControls(in , definitions)
+	return defaultBench.NewControls(in, definitions)
 }
-
-
-
 
 // RunGroup runs all checks in a group.
 func (controls *Controls) RunGroup(gids ...string) Summary {
