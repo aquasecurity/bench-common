@@ -101,7 +101,7 @@ func TestBuildOutputterFunc(t *testing.T) {
 	}
 
 	testCases := []struct {
-		opf  OutputFunc
+		opf  outputFunc
 		fail bool
 	}{
 		{

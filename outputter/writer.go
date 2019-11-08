@@ -10,31 +10,29 @@ import (
 var errMissingFilename = fmt.Errorf("filename is required")
 var errMissingIOWriter = fmt.Errorf("IOWriter is required")
 
-type FileHandler interface {
+type fileHandler interface {
 	Handle(data string) error
 }
 
-type File struct {
+type file struct {
 	Filename string
-	IOWriter IOWriter
+	ioWriter ioWriter
 }
 
-type FileDelegate struct{}
-
-type IOWriter interface {
+type ioWriter interface {
 	OutputToWriter(data string, w io.Writer) error
 }
 
-type IOWriteDelegate struct{}
+type ioWriteDelegate struct{}
 
-func NewFile(filename string) *File {
-	return &File{
+func newFile(filename string) *file {
+	return &file{
 		Filename: filename,
-		IOWriter: &IOWriteDelegate{},
+		ioWriter: &ioWriteDelegate{},
 	}
 }
 
-func (f *File) Handle(data string) error {
+func (f *file) Handle(data string) error {
 	if err := f.validate(); err != nil {
 		return err
 	}
@@ -47,22 +45,22 @@ func (f *File) Handle(data string) error {
 	w := bufio.NewWriter(file)
 	defer w.Flush()
 
-	return f.IOWriter.OutputToWriter(data, w)
+	return f.ioWriter.OutputToWriter(data, w)
 }
 
-func (f *File) validate() error {
+func (f *file) validate() error {
 	if f.Filename == "" {
 		return errMissingFilename
 	}
 
-	if f.IOWriter == nil {
+	if f.ioWriter == nil {
 		return errMissingIOWriter
 	}
 
 	return nil
 }
 
-func (iowd *IOWriteDelegate) OutputToWriter(data string, w io.Writer) error {
+func (iowd *ioWriteDelegate) OutputToWriter(data string, w io.Writer) error {
 	_, err := fmt.Fprintln(w, data)
 	return err
 }
