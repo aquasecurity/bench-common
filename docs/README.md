@@ -131,7 +131,7 @@ The `*-bench` project supports running individual checks by specifying the check
 as a comma-delimited list on the command line with the `--check` flag.
 
 The `audit` field specifies the command to run for a check. The output of this
-command is then evaluated for conformance with the CIS Kubernetes Benchmark
+command is then evaluated for conformance with the CIS Benchmark
 recommendation.
 
 The audit is evaluated against a criteria specified by the `tests`
