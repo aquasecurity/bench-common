@@ -20,7 +20,7 @@ with same name as the CIS versions under `cfg/`, for example `cfg/cis-1.4.0`.
 
 `controls` is a YAML document containing the test definitions for a benchmark.
 
-`controls` is the fundamental input to a `*-bench` project. The following is a Kubernetes CIS Benchmark example 
+`controls` is the fundamental input to a `*-bench` project. The following is a CIS Benchmark example 
 of `controls`:
 
 ```yml
@@ -72,7 +72,7 @@ in the `*-bench` project output.
 
 ## Groups
 
-`groups` is list of subgroups which test the various Kubernetes components
+`groups` is list of subgroups which test the various components
 that run on the node type specified in the `controls`. 
 
 
@@ -221,8 +221,8 @@ The `op` (operations) currently supported in The `*-bench` project are:
 
 ## Configuration and Variables
 
-Ccomponent configuration and binary file locations and names 
-vary based on cluster deployment methods, Operating Systems, and Kubernetes distribution used.
+The component configuration, binary file locations, and names 
+vary based on cluster deployment methods, Operating Systems, and orchestration software distribution used.
 For this reason, the locations of these binaries and config files are configurable
 by editing the `cfg/config.yaml` file and these binaries and files can be
 referenced in a `controls` file via variables.
