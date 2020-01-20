@@ -219,72 +219,7 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 				flagVal = getFlagValue(output, t.Flag)
 			}
 
-			expectedResultPattern := ""
-			var a, b int
-
-			switch t.Compare.Op {
-			case "eq":
-				expectedResultPattern = "'%s' Is equal to '%s'"
-				value := strings.ToLower(flagVal)
-				// In case the result should be empty, changing the status to indicate "No output"
-				if t.Compare.Value == "" && t.Flag == "" {
-					expectedResultPattern = "%s%sNo output"
-				}
-				// Do case insensitive comparison for booleans ...
-				if value == "false" || value == "true" {
-					TestResult = value == t.Compare.Value
-				} else {
-					TestResult = flagVal == t.Compare.Value
-				}
-
-			case "noteq":
-				expectedResultPattern = "'%s' Is not equal to '%s'"
-				value := strings.ToLower(flagVal)
-				// Do case insensitive comparaison for booleans ...
-				if value == "false" || value == "true" {
-					TestResult = !(value == t.Compare.Value)
-				} else {
-					TestResult = !(flagVal == t.Compare.Value)
-				}
-
-			case "gt":
-				expectedResultPattern = "%s Is greater then %s"
-				a, b, err = toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					TestResult = a > b
-				}
-
-			case "gte":
-				expectedResultPattern = "%s Is greater or equal to %s"
-				a, b, err = toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					TestResult = a >= b
-				}
-
-			case "lt":
-				expectedResultPattern = "%s Is lower then %s"
-				a, b, err = toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					TestResult = a < b
-				}
-
-			case "lte":
-				expectedResultPattern = "%s Is lower or equal to %s"
-				a, b, err = toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					TestResult = a <= b
-				}
-
-			case "has":
-				expectedResultPattern = "'%s' Has '%s'"
-				TestResult = strings.Contains(flagVal, t.Compare.Value)
-
-			case "nothave":
-				expectedResultPattern = " '%s' Not have '%s'"
-				TestResult = !strings.Contains(flagVal, t.Compare.Value)
-			}
-
-			ExpectedResult = fmt.Sprintf(expectedResultPattern, t.Flag, t.Compare.Value)
+			ExpectedResult, TestResult = compareOp(t.Compare.Op, flagVal, t.Compare.Value)
 		} else {
 			ExpectedResult = fmt.Sprintf("'%s' Is present", t.Flag)
 			TestResult, _ = regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, output)
@@ -296,6 +231,75 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 	}
 
 	return TestResult, ExpectedResult, err
+}
+
+func compareOp(tCompareOp string, flagVal string, tCompareValue string) (string, bool) {
+	expectedResultPattern := ""
+	var TestResult bool
+
+	switch tCompareOp {
+	case "eq":
+		expectedResultPattern = "'%s' Is equal to '%s'"
+		value := strings.ToLower(flagVal)
+		// In case the result should be empty, changing the status to indicate "No output"
+		if tCompareValue == "" && flagVal == "" {
+			expectedResultPattern = "%s%sNo output"
+		}
+		// Do case insensitive comparison for booleans ...
+		if value == "false" || value == "true" {
+			TestResult = value == tCompareValue
+		} else {
+			TestResult = flagVal == tCompareValue
+		}
+
+	case "noteq":
+		expectedResultPattern = "'%s' Is not equal to '%s'"
+		value := strings.ToLower(flagVal)
+		// Do case insensitive comparaison for booleans ...
+		if value == "false" || value == "true" {
+			TestResult = !(value == tCompareValue)
+		} else {
+			TestResult = !(flagVal == tCompareValue)
+		}
+
+	case "gt":
+		expectedResultPattern = "%s Is greater then %s"
+		a, b, err := toNumeric(flagVal, tCompareValue)
+		if err == nil {
+			TestResult = a > b
+		}
+
+	case "gte":
+		expectedResultPattern = "%s Is greater or equal to %s"
+		a, b, err := toNumeric(flagVal, tCompareValue)
+		if err == nil {
+			TestResult = a >= b
+		}
+
+	case "lt":
+		expectedResultPattern = "%s Is lower then %s"
+		a, b, err := toNumeric(flagVal, tCompareValue)
+		if err == nil {
+			TestResult = a < b
+		}
+
+	case "lte":
+		expectedResultPattern = "%s Is lower or equal to %s"
+		a, b, err := toNumeric(flagVal, tCompareValue)
+		if err == nil {
+			TestResult = a <= b
+		}
+
+	case "has":
+		expectedResultPattern = "'%s' Has '%s'"
+		TestResult = strings.Contains(flagVal, tCompareValue)
+
+	case "nothave":
+		expectedResultPattern = " '%s' Not have '%s'"
+		TestResult = !strings.Contains(flagVal, tCompareValue)
+	}
+
+	return fmt.Sprintf(expectedResultPattern, flagVal, tCompareValue), TestResult
 }
 
 func unmarshal(s string, jsonInterface *interface{}) error {
