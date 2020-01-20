@@ -20,15 +20,21 @@ func (f outputFunc) Output(controls *check.Controls, summary check.Summary) erro
 // Config configuration for either JSON or Console outputter
 type Config struct {
 	Console
-	JSON
-	JSONFormat bool
+	JSONFormat  bool
+	JUnitFormat bool
+	Filename    string
 }
 
 // BuildOutputter build new outputter. Depending on the parameters
 // passed will return either a JSON outputter or a Console outputter.
 func BuildOutputter(summary check.Summary, config *Config) Outputter {
-	if (summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0 || summary.Info > 0) && config.JSONFormat {
-		return NewJSON(config.JSON.Filename)
+	if summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0 || summary.Info > 0 {
+		switch {
+		case config.JSONFormat:
+			return NewJSON(config.Filename)
+		case config.JUnitFormat:
+			return NewJUnit(config.Filename)
+		}
 	}
 
 	return NewConsole(config.Console.NoRemediations, config.Console.IncludeTestOutput)

@@ -7,42 +7,42 @@ import (
 	"github.com/aquasecurity/bench-common/check"
 )
 
-type mockFile struct {
+type junitmockFile struct {
 	fail bool
 }
 
-func (mf *mockFile) Handle(data string) error {
+func (mf *junitmockFile) Handle(data string) error {
 	if mf.fail {
 		return fmt.Errorf("Failed to Handle data")
 	}
 	return nil
 }
 
-func TestOutputJSON(t *testing.T) {
+func TestOutputJUnit(t *testing.T) {
 	cases := []struct {
 		n             string
-		json          *JSON
+		junit         *JUnit
 		expectedError error
 		fail          bool
 		controls      *check.Controls
 	}{
 		{
 			n: "happy path",
-			json: &JSON{
-				fileHandler: &mockFile{fail: false},
+			junit: &JUnit{
+				fileHandler: &junitmockFile{fail: false},
 			},
 			controls: &check.Controls{},
 		},
 		{
 			n:             "errFileHandlerRequired",
-			json:          &JSON{},
+			junit:         &JUnit{},
 			expectedError: errFileHandlerRequired,
 			controls:      &check.Controls{},
 		},
 		{
 			n: "fileHandlerProvidedFailed",
-			json: &JSON{
-				fileHandler: &mockFile{
+			junit: &JUnit{
+				fileHandler: &junitmockFile{
 					fail: false,
 				},
 			},
@@ -50,8 +50,8 @@ func TestOutputJSON(t *testing.T) {
 		},
 		{
 			n: "fileHandlerProvidedPass",
-			json: &JSON{
-				fileHandler: &mockFile{
+			junit: &JUnit{
+				fileHandler: &junitmockFile{
 					fail: false,
 				},
 			},
@@ -61,7 +61,7 @@ func TestOutputJSON(t *testing.T) {
 	summary := check.Summary{}
 
 	for _, c := range cases {
-		err := c.json.Output(c.controls, summary)
+		err := c.junit.Output(c.controls, summary)
 		if c.expectedError != nil {
 			if c.expectedError != err {
 				t.Errorf("Expected Error %q but got %q", c.expectedError, err)

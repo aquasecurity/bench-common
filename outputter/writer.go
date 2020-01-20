@@ -7,7 +7,6 @@ import (
 	"os"
 )
 
-var errMissingFilename = fmt.Errorf("filename is required")
 var errMissingIOWriter = fmt.Errorf("IOWriter is required")
 
 type fileHandler interface {
@@ -36,23 +35,26 @@ func (f *file) Handle(data string) error {
 	if err := f.validate(); err != nil {
 		return err
 	}
-	file, err := os.Create(f.Filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
 
-	w := bufio.NewWriter(file)
-	defer w.Flush()
+	var w io.Writer
+	if len(f.Filename) == 0 {
+		w = os.Stdout
+	} else {
+		file, err := os.Create(f.Filename)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		w = file
+	}
+
+	writer := bufio.NewWriter(w)
+	defer writer.Flush()
 
 	return f.ioWriter.OutputToWriter(data, w)
 }
 
 func (f *file) validate() error {
-	if f.Filename == "" {
-		return errMissingFilename
-	}
-
 	if f.ioWriter == nil {
 		return errMissingIOWriter
 	}
