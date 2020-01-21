@@ -107,7 +107,7 @@ type Check struct {
 	Set            bool             `json:"omit"`
 	SubChecks      []*SubCheck      `yaml:"sub_checks"`
 	AuditType      AuditType        `json:"audit_type"`
-	Audit          interface{}      `json:"omit"`
+	Audit          interface{}      `json:"audit"`
 	Type           string           `json:"type"`
 	Commands       []*exec.Cmd      `json:"omit"`
 	Tests          *auditeval.Tests `json:"omit"`
