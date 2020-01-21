@@ -22,13 +22,17 @@ type Config struct {
 	Console
 	JSON
 	JSONFormat bool
+	PGSQL      bool
 }
 
 // BuildOutputter build new outputter. Depending on the parameters
 // passed will return either a JSON outputter or a Console outputter.
 func BuildOutputter(summary check.Summary, config *Config) Outputter {
-	if (summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0 || summary.Info > 0) && config.JSONFormat {
-		return NewJSON(config.JSON.Filename)
+	if summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0 || summary.Info > 0 {
+		switch {
+		case config.JSONFormat:
+			return NewJSON(config.JSON.Filename)
+		}
 	}
 
 	return NewConsole(config.Console.NoRemediations, config.Console.IncludeTestOutput)
