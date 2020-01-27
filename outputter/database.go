@@ -19,11 +19,16 @@ type PSGSQL struct {
 }
 
 const (
-	HOST     = "HOST"
-	USER     = "USER"
+	// HOST host key
+	HOST = "HOST"
+	// USER key
+	USER = "USER"
+	// PASSWORD key
 	PASSWORD = "PASSWORD"
-	SSLMODE  = "SSLMODE"
-	DBNAME   = "DBNAME"
+	// SSLMODE key
+	SSLMODE = "SSLMODE"
+	// DBNAME key
+	DBNAME = "DBNAME"
 )
 
 // NewPSGSQL constructs a new PSGSQL
