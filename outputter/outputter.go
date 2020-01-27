@@ -23,6 +23,7 @@ type Config struct {
 	JSON
 	JSONFormat bool
 	PGSQL      bool
+	Values     map[string]string
 }
 
 // BuildOutputter build new outputter. Depending on the parameters
@@ -32,6 +33,8 @@ func BuildOutputter(summary check.Summary, config *Config) Outputter {
 		switch {
 		case config.JSONFormat:
 			return NewJSON(config.JSON.Filename)
+		case config.PGSQL:
+			return NewPSGSQL(config.Values)
 		}
 	}
 
