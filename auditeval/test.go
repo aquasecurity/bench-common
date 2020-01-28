@@ -192,8 +192,6 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 	var flagVal string
 
 	if t.Flag == "" {
-		// Path != "" - we don't know whether it's YAML or JSON but
-		// we can just try one then the other
 		var jsonInterface interface{}
 
 		if t.Path != "" {
@@ -303,6 +301,8 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (string,
 }
 
 func unmarshal(s string, jsonInterface *interface{}) error {
+	// We don't know whether it's YAML or JSON but
+	// we can just try one then the other
 	data := []byte(s)
 	err := json.Unmarshal(data, jsonInterface)
 	if err != nil {
@@ -327,6 +327,6 @@ func executeJSONPath(path string, jsonInterface interface{}) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	jsonpathResult := buf.String()
-	return jsonpathResult, nil
+
+	return buf.String(), nil
 }
