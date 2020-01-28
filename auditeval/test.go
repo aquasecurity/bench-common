@@ -255,7 +255,7 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (string,
 		testResult = strings.Contains(flagVal, tCompareValue)
 
 	case "nothave":
-		expectedResultPattern = " '%s' not have '%s'"
+		expectedResultPattern = " '%s' does not have '%s'"
 		testResult = !strings.Contains(flagVal, tCompareValue)
 
 	case "regex":
