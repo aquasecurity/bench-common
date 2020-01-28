@@ -227,9 +227,10 @@ func Test_ExecuteMultipleOutput(t *testing.T) {
 func Test_toNumeric(t *testing.T) {
 
 	cases := []struct {
-		a     string
-		b     string
-		equal bool
+		a              string
+		b              string
+		equal          bool
+		expectedToFail bool
 	}{
 		// tab prefix
 		{
@@ -390,14 +391,35 @@ func Test_toNumeric(t *testing.T) {
 			b:     "25\r",
 			equal: false,
 		},
+
+		// Expected failures
+		{
+			a:              "a",
+			b:              "25\r",
+			expectedToFail: true,
+			equal:          false,
+		},
+		{
+			a:              "a",
+			b:              "b",
+			expectedToFail: true,
+			equal:          false,
+		},
 	}
 
 	for _, c := range cases {
 		ar, br, err := toNumeric(c.a, c.b)
-		if err != nil {
+
+		if c.expectedToFail {
+			if err == nil {
+				t.Errorf("Expected error but instead got none\n")
+			}
+			continue
+		} else if err != nil {
 			t.Errorf("Unexpected error: %v\n", err)
 			continue
 		}
+
 		if c.equal {
 			if ar != br {
 				t.Errorf("expected a:%q and b:%q to be equal\n", c.a, c.b)
@@ -418,6 +440,7 @@ func TestCompareOp(t *testing.T) {
 		compareValue          string
 		expectedResultPattern string
 		testResult            bool
+		expectedToFail        bool
 	}{
 		// Test Op not matching
 		{label: "empty - op", op: "", flagVal: "", compareValue: "", expectedResultPattern: "", testResult: false},
@@ -509,6 +532,12 @@ func TestCompareOp(t *testing.T) {
 		{label: "op=gt, 5 > 5", op: "gt", flagVal: "5",
 			compareValue: "5", expectedResultPattern: "5 is greater than 5",
 			testResult: false},
+		{label: "op=gt, b > 5", op: "gt", flagVal: "b",
+			compareValue: "5", expectedResultPattern: "",
+			testResult: false, expectedToFail: true},
+		{label: "op=gt, a > b", op: "gt", flagVal: "a",
+			compareValue: "b", expectedResultPattern: "",
+			testResult: false, expectedToFail: true},
 
 		// Test Op "lt"
 		// TODO: test for non-numeric values.
@@ -589,22 +618,22 @@ func TestCompareOp(t *testing.T) {
 
 		// Test Op "nothave"
 		{label: "op=gt, both empty", op: "nothave", flagVal: "",
-			compareValue: "", expectedResultPattern: " '' not have ''",
+			compareValue: "", expectedResultPattern: " '' does not have ''",
 			testResult: false},
 		{label: "op=gt, flagVal=empty", op: "nothave", flagVal: "",
-			compareValue: "blah", expectedResultPattern: " '' not have 'blah'",
+			compareValue: "blah", expectedResultPattern: " '' does not have 'blah'",
 			testResult: true},
 		{label: "op=gt, compareValue=empty", op: "nothave", flagVal: "blah",
-			compareValue: "", expectedResultPattern: " 'blah' not have ''",
+			compareValue: "", expectedResultPattern: " 'blah' does not have ''",
 			testResult: false},
 		{label: "op=gt, 'blah' not have 'la'", op: "nothave", flagVal: "blah",
-			compareValue: "la", expectedResultPattern: " 'blah' not have 'la'",
+			compareValue: "la", expectedResultPattern: " 'blah' does not have 'la'",
 			testResult: false},
 		{label: "op=gt, 'blah' not have 'LA'", op: "nothave", flagVal: "blah",
-			compareValue: "LA", expectedResultPattern: " 'blah' not have 'LA'",
+			compareValue: "LA", expectedResultPattern: " 'blah' does not have 'LA'",
 			testResult: true},
 		{label: "op=gt, 'blah' not have 'lo'", op: "nothave", flagVal: "blah",
-			compareValue: "lo", expectedResultPattern: " 'blah' not have 'lo'",
+			compareValue: "lo", expectedResultPattern: " 'blah' does not have 'lo'",
 			testResult: true},
 
 		// Test Op "regex"
@@ -630,7 +659,14 @@ func TestCompareOp(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		expectedResultPattern, testResult := compareOp(c.op, c.flagVal, c.compareValue)
+
+		expectedResultPattern, testResult, err := compareOp(c.op, c.flagVal, c.compareValue)
+		if c.expectedToFail {
+			if err == nil {
+				t.Errorf("Expected error for %s, but instead got none", c.label)
+			}
+			continue
+		}
 
 		if expectedResultPattern != c.expectedResultPattern {
 			t.Errorf("'expectedResultPattern' did not match - label: %q op: %q expected 'expectedResultPattern':%q  got:%q\n", c.label, c.op, c.expectedResultPattern, expectedResultPattern)
