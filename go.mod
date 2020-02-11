@@ -12,4 +12,5 @@ require (
 	github.com/spf13/viper v1.4.0
 	golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 // indirect
 	gopkg.in/yaml.v2 v2.2.2
+	k8s.io/client-go v11.0.0+incompatible
 )
