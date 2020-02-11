@@ -15,6 +15,9 @@
 package auditeval
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -22,6 +25,8 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
+	yaml "gopkg.in/yaml.v2"
+	"k8s.io/client-go/util/jsonpath"
 )
 
 type binOp string
@@ -34,6 +39,7 @@ const (
 
 type testItem struct {
 	Flag    string
+	Path    string
 	Output  string
 	Value   string
 	Set     bool
@@ -183,14 +189,36 @@ func getFlagValue(s, flag string) string {
 }
 
 func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult string, err error) {
+	var match bool
+	var flagVal string
+
+	if t.Flag == "" {
+		var jsonInterface interface{}
+
+		if t.Path != "" {
+			err := unmarshal(output, &jsonInterface)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to load YAML or JSON from provided input \"%s\": %v\n", output, err)
+				return false, "", errors.New("failed to load YAML or JSON")
+			}
+		}
+
+		jsonpathResult, err := executeJSONPath(t.Path, &jsonInterface)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unable to parse path expression \"%s\": %v\n", t.Path, err)
+			return false, "", errors.New("error executing path expression")
+		}
+		match = (jsonpathResult != "")
+		flagVal = jsonpathResult
+	}
 
 	if t.Set {
 		if t.Compare.Op != "" {
-			flagVal := getFlagValue(output, t.Flag)
-			TestResult, ExpectedResult, err = compareOp(t.Compare.Op, flagVal, t.Compare.Value)
-			if err != nil {
-				return
+			if !match {
+				flagVal = getFlagValue(output, t.Flag)
 			}
+
+			TestResult, ExpectedResult, err = compareOp(t.Compare.Op, flagVal, t.Compare.Value)
 		} else {
 			ExpectedResult = fmt.Sprintf("'%s' Is present", t.Flag)
 			TestResult, _ = regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, output)
@@ -323,4 +351,35 @@ func splitAndRemoveLastSeparator(s, sep string) []string {
 	}
 
 	return ts
+}
+
+func unmarshal(s string, jsonInterface *interface{}) error {
+	// We don't know whether it's YAML or JSON but
+	// we can just try one then the other
+	data := []byte(s)
+	err := json.Unmarshal(data, jsonInterface)
+	if err != nil {
+		err := yaml.Unmarshal(data, jsonInterface)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func executeJSONPath(path string, jsonInterface interface{}) (string, error) {
+	j := jsonpath.New("jsonpath")
+	j.AllowMissingKeys(true)
+	err := j.Parse(path)
+	if err != nil {
+		return "", err
+	}
+
+	buf := new(bytes.Buffer)
+	err = j.Execute(buf, jsonInterface)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }
