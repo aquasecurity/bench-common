@@ -794,7 +794,7 @@ func TestSplitAndRemoveLastSeparator(t *testing.T) {
 func TestTestUnmarshal(t *testing.T) {
 	type kubeletConfig struct {
 		Kind       string
-		ApiVersion string
+		APIVersion string
 		Address    string
 	}
 	cases := []struct {
@@ -858,7 +858,7 @@ apiVersion: kubelet.config.k8s.io/v1beta
 func TestExecuteJSONPath(t *testing.T) {
 	type kubeletConfig struct {
 		Kind       string
-		ApiVersion string
+		APIVersion string
 		Address    string
 	}
 	cases := []struct {
@@ -872,7 +872,7 @@ func TestExecuteJSONPath(t *testing.T) {
 			"{.Kind}",
 			kubeletConfig{
 				Kind:       "KubeletConfiguration",
-				ApiVersion: "kubelet.config.k8s.io/v1beta1",
+				APIVersion: "kubelet.config.k8s.io/v1beta1",
 				Address:    "127.0.0.0",
 			},
 			"blah",
@@ -883,7 +883,7 @@ func TestExecuteJSONPath(t *testing.T) {
 			"{.Kind}",
 			kubeletConfig{
 				Kind:       "KubeletConfiguration",
-				ApiVersion: "kubelet.config.k8s.io/v1beta1",
+				APIVersion: "kubelet.config.k8s.io/v1beta1",
 				Address:    "127.0.0.0",
 			},
 			"KubeletConfiguration",
@@ -894,7 +894,7 @@ func TestExecuteJSONPath(t *testing.T) {
 			"{.ApiVersion",
 			kubeletConfig{
 				Kind:       "KubeletConfiguration",
-				ApiVersion: "kubelet.config.k8s.io/v1beta1",
+				APIVersion: "kubelet.config.k8s.io/v1beta1",
 				Address:    "127.0.0.0",
 			},
 			"",
