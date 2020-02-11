@@ -17,11 +17,15 @@ func (f outputFunc) Output(controls *check.Controls, summary check.Summary) erro
 	return f(controls, summary)
 }
 
+// Format of the output
 type Format int
 
 const (
+	// JSONFormat send json output to console
 	JSONFormat Format = iota + 10
-	PgSQLFormat
+	// PgSQLFormat send output to pgsql DB
+ 	PgSQLFormat
+	// ConsoleFormat send output console
 	ConsoleFormat
 )
 
