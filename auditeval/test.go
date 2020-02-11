@@ -15,6 +15,9 @@
 package auditeval
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -22,6 +25,8 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
+	yaml "gopkg.in/yaml.v2"
+	"k8s.io/client-go/util/jsonpath"
 )
 
 type binOp string
@@ -33,6 +38,7 @@ const (
 
 type testItem struct {
 	Flag    string
+	Path    string
 	Output  string
 	Value   string
 	Set     bool
@@ -182,76 +188,36 @@ func getFlagValue(s, flag string) string {
 }
 
 func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult string, err error) {
+	var match bool
+	var flagVal string
+
+	if t.Flag == "" {
+		var jsonInterface interface{}
+
+		if t.Path != "" {
+			err := unmarshal(output, &jsonInterface)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to load YAML or JSON from provided input \"%s\": %v\n", output, err)
+				return false, "", errors.New("failed to load YAML or JSON")
+			}
+		}
+
+		jsonpathResult, err := executeJSONPath(t.Path, &jsonInterface)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unable to parse path expression \"%s\": %v\n", t.Path, err)
+			return false, "", errors.New("error executing path expression")
+		}
+		match = (jsonpathResult != "")
+		flagVal = jsonpathResult
+	}
 
 	if t.Set {
 		if t.Compare.Op != "" {
-			flagVal := getFlagValue(output, t.Flag)
-			expectedResultPattern := ""
-			var a, b int
-
-			switch t.Compare.Op {
-			case "eq":
-				expectedResultPattern = "'%s' Is equal to '%s'"
-				value := strings.ToLower(flagVal)
-				// In case the result should be empty, changing the status to indicate "No output"
-				if t.Compare.Value == "" && t.Flag == "" {
-					expectedResultPattern = "%s%sNo output"
-				}
-				// Do case insensitive comparison for booleans ...
-				if value == "false" || value == "true" {
-					TestResult = value == t.Compare.Value
-				} else {
-					TestResult = flagVal == t.Compare.Value
-				}
-
-			case "noteq":
-				expectedResultPattern = "'%s' Is not equal to '%s'"
-				value := strings.ToLower(flagVal)
-				// Do case insensitive comparaison for booleans ...
-				if value == "false" || value == "true" {
-					TestResult = !(value == t.Compare.Value)
-				} else {
-					TestResult = !(flagVal == t.Compare.Value)
-				}
-
-			case "gt":
-				expectedResultPattern = "%s Is greater then %s"
-				a, b, err = toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					TestResult = a > b
-				}
-
-			case "gte":
-				expectedResultPattern = "%s Is greater or equal to %s"
-				a, b, err = toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					TestResult = a >= b
-				}
-
-			case "lt":
-				expectedResultPattern = "%s Is lower then %s"
-				a, b, err = toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					TestResult = a < b
-				}
-
-			case "lte":
-				expectedResultPattern = "%s Is lower or equal to %s"
-				a, b, err = toNumeric(flagVal, t.Compare.Value)
-				if err == nil {
-					TestResult = a <= b
-				}
-
-			case "has":
-				expectedResultPattern = "'%s' Has '%s'"
-				TestResult = strings.Contains(flagVal, t.Compare.Value)
-
-			case "nothave":
-				expectedResultPattern = " '%s' Not have '%s'"
-				TestResult = !strings.Contains(flagVal, t.Compare.Value)
+			if !match {
+				flagVal = getFlagValue(output, t.Flag)
 			}
 
-			ExpectedResult = fmt.Sprintf(expectedResultPattern, t.Flag, t.Compare.Value)
+			ExpectedResult, TestResult = compareOp(t.Compare.Op, flagVal, t.Compare.Value)
 		} else {
 			ExpectedResult = fmt.Sprintf("'%s' Is present", t.Flag)
 			TestResult, _ = regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, output)
@@ -263,4 +229,104 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 	}
 
 	return TestResult, ExpectedResult, err
+}
+
+func compareOp(tCompareOp string, flagVal string, tCompareValue string) (string, bool) {
+	expectedResultPattern := ""
+	var TestResult bool
+
+	switch tCompareOp {
+	case "eq":
+		expectedResultPattern = "'%s' Is equal to '%s'"
+		value := strings.ToLower(flagVal)
+		// In case the result should be empty, changing the status to indicate "No output"
+		if tCompareValue == "" && flagVal == "" {
+			expectedResultPattern = "%s%sNo output"
+		}
+		// Do case insensitive comparison for booleans ...
+		if value == "false" || value == "true" {
+			TestResult = value == tCompareValue
+		} else {
+			TestResult = flagVal == tCompareValue
+		}
+
+	case "noteq":
+		expectedResultPattern = "'%s' Is not equal to '%s'"
+		value := strings.ToLower(flagVal)
+		// Do case insensitive comparaison for booleans ...
+		if value == "false" || value == "true" {
+			TestResult = !(value == tCompareValue)
+		} else {
+			TestResult = !(flagVal == tCompareValue)
+		}
+
+	case "gt":
+		expectedResultPattern = "%s Is greater then %s"
+		a, b, err := toNumeric(flagVal, tCompareValue)
+		if err == nil {
+			TestResult = a > b
+		}
+
+	case "gte":
+		expectedResultPattern = "%s Is greater or equal to %s"
+		a, b, err := toNumeric(flagVal, tCompareValue)
+		if err == nil {
+			TestResult = a >= b
+		}
+
+	case "lt":
+		expectedResultPattern = "%s Is lower then %s"
+		a, b, err := toNumeric(flagVal, tCompareValue)
+		if err == nil {
+			TestResult = a < b
+		}
+
+	case "lte":
+		expectedResultPattern = "%s Is lower or equal to %s"
+		a, b, err := toNumeric(flagVal, tCompareValue)
+		if err == nil {
+			TestResult = a <= b
+		}
+
+	case "has":
+		expectedResultPattern = "'%s' Has '%s'"
+		TestResult = strings.Contains(flagVal, tCompareValue)
+
+	case "nothave":
+		expectedResultPattern = " '%s' Not have '%s'"
+		TestResult = !strings.Contains(flagVal, tCompareValue)
+	}
+
+	return fmt.Sprintf(expectedResultPattern, flagVal, tCompareValue), TestResult
+}
+
+func unmarshal(s string, jsonInterface *interface{}) error {
+	// We don't know whether it's YAML or JSON but
+	// we can just try one then the other
+	data := []byte(s)
+	err := json.Unmarshal(data, jsonInterface)
+	if err != nil {
+		err := yaml.Unmarshal(data, jsonInterface)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func executeJSONPath(path string, jsonInterface interface{}) (string, error) {
+	j := jsonpath.New("jsonpath")
+	j.AllowMissingKeys(true)
+	err := j.Parse(path)
+	if err != nil {
+		return "", err
+	}
+
+	buf := new(bytes.Buffer)
+	err = j.Execute(buf, jsonInterface)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }
