@@ -240,6 +240,10 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (bool, s
 	case "eq":
 		expectedResultPattern = "'%s' is equal to '%s'"
 		value := strings.ToLower(flagVal)
+		// In case the result should be empty, changing the status to indicate "No output"
+		if tCompareValue == "" && flagVal == "" {
+			expectedResultPattern = "%s%sNo output"
+		}
 		// Do case insensitive comparison for booleans ...
 		if value == "false" || value == "true" {
 			testResult = value == tCompareValue

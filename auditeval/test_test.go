@@ -447,7 +447,7 @@ func TestCompareOp(t *testing.T) {
 		{label: "op=blah", op: "blah", flagVal: "foo", compareValue: "bar", expectedResultPattern: "", testResult: false},
 
 		// Test Op "eq"
-		{label: "op=eq, both empty", op: "eq", flagVal: "", compareValue: "", expectedResultPattern: "'' is equal to ''", testResult: true},
+		{label: "op=eq, both empty", op: "eq", flagVal: "", compareValue: "", expectedResultPattern: "No output", testResult: true},
 
 		{label: "op=eq, true==true", op: "eq", flagVal: "true",
 			compareValue:          "true",
