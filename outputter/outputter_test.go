@@ -1,9 +1,9 @@
 package outputter
 
 import (
-	"testing"
-
+	"fmt"
 	"github.com/aquasecurity/bench-common/check"
+	"testing"
 )
 
 func TestBuildOutputterJSON(t *testing.T) {
@@ -17,7 +17,7 @@ func TestBuildOutputterJSON(t *testing.T) {
 				Pass: 1,
 			},
 			config: &Config{
-				JSONFormat: true,
+				Format: JSONFormat,
 			},
 			match: true,
 		},
@@ -36,17 +36,65 @@ func TestBuildOutputterJSON(t *testing.T) {
 		{
 			summary: check.Summary{},
 			config: &Config{
-				JSONFormat: true,
+				Format: JSONFormat,
 			},
 			match: false,
 		},
 	}
 
-	for _, tc := range testCases {
-		o := BuildOutputter(tc.summary, tc.config)
-		if _, match := o.(*JSON); tc.match != match {
-			t.Errorf("TestBuildOutputterJSON - Wrong Type returned")
-		}
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			o := BuildOutputter(tc.summary, tc.config)
+			if _, match := o.(*JSON); tc.match != match {
+				t.Errorf("TestBuildOutputterJSON/%d failed - Expected '*outputter.JSON' but got '%T'", i, o)
+			}
+		})
+	}
+}
+
+func TestBuildOutputterPgSQL(t *testing.T) {
+	testCases := []struct {
+		summary check.Summary
+		config  *Config
+		match   bool
+	}{
+		{
+			summary: check.Summary{
+				Pass: 1,
+			},
+			config: &Config{
+				Format: PgSQLFormat,
+			},
+			match: true,
+		},
+		{
+			summary: check.Summary{
+				Pass: 1,
+			},
+			config: &Config{},
+			match:  false,
+		},
+		{
+			summary: check.Summary{},
+			config:  &Config{},
+			match:   false,
+		},
+		{
+			summary: check.Summary{},
+			config: &Config{
+				Format: JSONFormat,
+			},
+			match: false,
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			o := BuildOutputter(tc.summary, tc.config)
+			if _, match := o.(*PgSQL); tc.match != match {
+				t.Errorf("TestBuildOutputterPgSQL/%d failed - Expected '*outputter.PgSQL' but got '%T'", i, o)
+			}
+		})
 	}
 }
 
@@ -61,7 +109,7 @@ func TestBuildOutputterConsole(t *testing.T) {
 				Pass: 1,
 			},
 			config: &Config{
-				JSONFormat: true,
+				Format: JSONFormat,
 			},
 			match: false,
 		},
@@ -80,17 +128,19 @@ func TestBuildOutputterConsole(t *testing.T) {
 		{
 			summary: check.Summary{},
 			config: &Config{
-				JSONFormat: true,
+				Format: JSONFormat,
 			},
 			match: true,
 		},
 	}
 
-	for _, tc := range testCases {
-		o := BuildOutputter(tc.summary, tc.config)
-		if _, match := o.(*Console); tc.match != match {
-			t.Errorf("TestBuildOutputterConsole - Wrong Type returned")
-		}
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			o := BuildOutputter(tc.summary, tc.config)
+			if _, match := o.(*Console); tc.match != match {
+				t.Errorf("TestBuildOutputterConsole/%d failed - Expected '*outputter.Console' but got '%T'", i, o)
+			}
+		})
 	}
 }
 

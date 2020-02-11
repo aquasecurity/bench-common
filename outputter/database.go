@@ -9,13 +9,13 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// PSGSQL contains the database connection information
-type PSGSQL struct {
-	Host     string
-	User     string
-	Password string
-	SSLMode  string
-	DBName   string
+// PgSQL contains the database connection information
+type PgSQL struct {
+	host     string
+	user     string
+	password string
+	sslMode  string
+	dbName   string
 }
 
 const (
@@ -31,30 +31,30 @@ const (
 	DBNAME = "DBNAME"
 )
 
-// NewPSGSQL constructs a new PSGSQL
-func NewPSGSQL(configValues map[string]string) *PSGSQL {
-	return &PSGSQL{
-		Host:     configValues[HOST],
-		User:     configValues[USER],
-		Password: configValues[PASSWORD],
-		SSLMode:  configValues[SSLMODE],
-		DBName:   configValues[DBNAME],
+// NewPgSQL constructs a new PgSQL
+func NewPgSQL(configValues map[string]string) *PgSQL {
+	return &PgSQL{
+		host:     configValues[HOST],
+		user:     configValues[USER],
+		password: configValues[PASSWORD],
+		sslMode:  configValues[SSLMODE],
+		dbName:   configValues[DBNAME],
 	}
 }
 
 // Output stores JSON payload to the database
-func (pg *PSGSQL) Output(controls *check.Controls, summary check.Summary) error {
+func (pg *PgSQL) Output(controls *check.Controls, summary check.Summary) error {
 	jsonPayload, err := controls.JSON()
 	if err != nil {
 		return fmt.Errorf("unable to save PostgreSQL data - %v", err)
 	}
 
 	connInfo := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=%s password=%s",
-		pg.Host,
-		pg.User,
-		pg.DBName,
-		pg.SSLMode,
-		pg.Password,
+		pg.host,
+		pg.user,
+		pg.dbName,
+		pg.sslMode,
+		pg.password,
 	)
 
 	hostname, err := os.Hostname()

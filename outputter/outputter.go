@@ -17,12 +17,19 @@ func (f outputFunc) Output(controls *check.Controls, summary check.Summary) erro
 	return f(controls, summary)
 }
 
+type Format int
+
+const (
+	JSONFormat Format = iota + 10
+	PgSQLFormat
+	ConsoleFormat
+)
+
 // Config configuration for either JSON or Console outputter
 type Config struct {
 	Console
 	JSON
-	JSONFormat bool
-	PGSQL      bool
+	Format Format
 	Values     map[string]string
 }
 
@@ -30,11 +37,11 @@ type Config struct {
 // passed will return either a JSON outputter or a Console outputter.
 func BuildOutputter(summary check.Summary, config *Config) Outputter {
 	if summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0 || summary.Info > 0 {
-		switch {
-		case config.JSONFormat:
+		switch config.Format {
+		case JSONFormat:
 			return NewJSON(config.JSON.Filename)
-		case config.PGSQL:
-			return NewPSGSQL(config.Values)
+		case PgSQLFormat:
+			return NewPgSQL(config.Values)
 		}
 	}
 
