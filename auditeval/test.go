@@ -260,7 +260,6 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (bool, s
 	case "gt", "gte", "lt", "lte":
 		a, b, err := toNumeric(flagVal, tCompareValue)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Not numeric value - flag: %q - compareValue: %q %v\n", flagVal, tCompareValue, err)
 			return false, "", fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
 		}
 		switch tCompareOp {
@@ -299,10 +298,7 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (bool, s
 		s := splitAndRemoveLastSeparator(flagVal, defaultArraySeparator)
 		target := splitAndRemoveLastSeparator(tCompareValue, defaultArraySeparator)
 		testResult = allElementsValid(s, target)
-
-	}
-
-	if expectedResultPattern == "" {
+	default:
 		return testResult, expectedResultPattern, nil
 	}
 
