@@ -222,7 +222,7 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (string,
 	case "noteq":
 		expectedResultPattern = "'%s' is not equal to '%s'"
 		value := strings.ToLower(flagVal)
-		// Do case insensitive comparaison for booleans ...
+		// Do case insensitive comparison for booleans ...
 		if value == "false" || value == "true" {
 			testResult = !(value == tCompareValue)
 		} else {
