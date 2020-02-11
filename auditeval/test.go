@@ -264,7 +264,7 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (bool, s
 	case "gt", "gte", "lt", "lte":
 		a, b, err := toNumeric(flagVal, tCompareValue)
 		if err != nil {
-			return false, "", fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
+			return false, "Invalid Number(s) used for comparison", fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
 		}
 		switch tCompareOp {
 		case "gt":

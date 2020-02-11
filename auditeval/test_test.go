@@ -515,11 +515,9 @@ func TestCompareOp(t *testing.T) {
 			testResult:            true},
 
 		// Test Op "gt"
-		// TODO: test for non-numeric values.
-		//        toNumeric function currently uses os.Exit, which stops tests.
-		// {label: "op=gt, both empty", op: "gt", flagVal: "",
-		// 	compareValue: "", expectedResultPattern: "'' is greater than ''",
-		// 	testResult: true},
+		{label: "op=gt, both empty", op: "gt", flagVal: "",
+			compareValue: "", expectedResultPattern: "Invalid Number(s) used for comparison",
+			testResult: false, expectedToFail: true},
 		{label: "op=gt, 0 > 0", op: "gt", flagVal: "0",
 			compareValue: "0", expectedResultPattern: "0 is greater than 0",
 			testResult: false},
@@ -533,68 +531,80 @@ func TestCompareOp(t *testing.T) {
 			compareValue: "5", expectedResultPattern: "5 is greater than 5",
 			testResult: false},
 		{label: "op=gt, b > 5", op: "gt", flagVal: "b",
-			compareValue: "5", expectedResultPattern: "",
+			compareValue: "5", expectedResultPattern: "Invalid Number(s) used for comparison",
 			testResult: false, expectedToFail: true},
 		{label: "op=gt, a > b", op: "gt", flagVal: "a",
-			compareValue: "b", expectedResultPattern: "",
+			compareValue: "b", expectedResultPattern: "Invalid Number(s) used for comparison",
 			testResult: false, expectedToFail: true},
 
 		// Test Op "lt"
-		// TODO: test for non-numeric values.
-		//        toNumeric function currently uses os.Exit, which stops tests.
-		// {label: "op=lt, both empty", op: "lt", flagVal: "",
-		// 	compareValue: "", expectedResultPattern: "'' is lower than ''",
-		// 	testResult: true},
-		{label: "op=gt, 0 < 0", op: "lt", flagVal: "0",
+		{label: "op=lt, both empty", op: "lt", flagVal: "",
+			compareValue: "", expectedResultPattern: "Invalid Number(s) used for comparison",
+			testResult: true, expectedToFail: true},
+		{label: "op=ltt, 0 < 0", op: "lt", flagVal: "0",
 			compareValue: "0", expectedResultPattern: "0 is lower than 0",
 			testResult: false},
-		{label: "op=gt, 4 < 5", op: "lt", flagVal: "4",
+		{label: "op=lt, 4 < 5", op: "lt", flagVal: "4",
 			compareValue: "5", expectedResultPattern: "4 is lower than 5",
 			testResult: true},
-		{label: "op=gt, 5 < 4", op: "lt", flagVal: "5",
+		{label: "op=lt, 5 < 4", op: "lt", flagVal: "5",
 			compareValue: "4", expectedResultPattern: "5 is lower than 4",
 			testResult: false},
-		{label: "op=gt, 5 < 5", op: "lt", flagVal: "5",
+		{label: "op=lt, 5 < 5", op: "lt", flagVal: "5",
 			compareValue: "5", expectedResultPattern: "5 is lower than 5",
 			testResult: false},
+		{label: "op=lt, b < 5", op: "lt", flagVal: "b",
+			compareValue: "5", expectedResultPattern: "Invalid Number(s) used for comparison",
+			testResult: false, expectedToFail: true},
+		{label: "op=lt, a < b", op: "lt", flagVal: "a",
+			compareValue: "b", expectedResultPattern: "Invalid Number(s) used for comparison",
+			testResult: false, expectedToFail: true},
 
 		// Test Op "gte"
-		// TODO: test for non-numeric values.
-		//        toNumeric function currently uses os.Exit, which stops tests.
-		// {label: "op=gt, both empty", op: "gte", flagVal: "",
-		// 	compareValue: "", expectedResultPattern: "'' is greater or equal to ''",
-		// 	testResult: true},
-		{label: "op=gt, 0 >= 0", op: "gte", flagVal: "0",
+		{label: "op=gte, both empty", op: "gte", flagVal: "",
+			compareValue: "", expectedResultPattern: "Invalid Number(s) used for comparison",
+			testResult: true, expectedToFail: true},
+		{label: "op=gte, 0 >= 0", op: "gte", flagVal: "0",
 			compareValue: "0", expectedResultPattern: "0 is greater or equal to 0",
 			testResult: true},
-		{label: "op=gt, 4 >= 5", op: "gte", flagVal: "4",
+		{label: "op=gte, 4 >= 5", op: "gte", flagVal: "4",
 			compareValue: "5", expectedResultPattern: "4 is greater or equal to 5",
 			testResult: false},
-		{label: "op=gt, 5 >= 4", op: "gte", flagVal: "5",
+		{label: "op=gte, 5 >= 4", op: "gte", flagVal: "5",
 			compareValue: "4", expectedResultPattern: "5 is greater or equal to 4",
 			testResult: true},
-		{label: "op=gt, 5 >= 5", op: "gte", flagVal: "5",
+		{label: "op=gte, 5 >= 5", op: "gte", flagVal: "5",
 			compareValue: "5", expectedResultPattern: "5 is greater or equal to 5",
 			testResult: true},
+		{label: "op=gte, b >= 5", op: "gte", flagVal: "b",
+			compareValue: "5", expectedResultPattern: "Invalid Number(s) used for comparison",
+			testResult: false, expectedToFail: true},
+		{label: "op=gte, a >= b", op: "gte", flagVal: "a",
+			compareValue: "b", expectedResultPattern: "Invalid Number(s) used for comparison",
+			testResult: false, expectedToFail: true},
 
 		// Test Op "lte"
-		// TODO: test for non-numeric values.
-		//        toNumeric function currently uses os.Exit, which stops tests.
-		// {label: "op=gt, both empty", op: "lte", flagVal: "",
-		// 	compareValue: "", expectedResultPattern: "'' is lower or equal to ''",
-		// 	testResult: true},
-		{label: "op=gt, 0 <= 0", op: "lte", flagVal: "0",
+		{label: "op=lte, both empty", op: "lte", flagVal: "",
+			compareValue: "", expectedResultPattern: "Invalid Number(s) used for comparison",
+			testResult: true, expectedToFail: true},
+		{label: "op=lte, 0 <= 0", op: "lte", flagVal: "0",
 			compareValue: "0", expectedResultPattern: "0 is lower or equal to 0",
 			testResult: true},
-		{label: "op=gt, 4 <= 5", op: "lte", flagVal: "4",
+		{label: "op=lte, 4 <= 5", op: "lte", flagVal: "4",
 			compareValue: "5", expectedResultPattern: "4 is lower or equal to 5",
 			testResult: true},
-		{label: "op=gt, 5 <= 4", op: "lte", flagVal: "5",
+		{label: "op=lte, 5 <= 4", op: "lte", flagVal: "5",
 			compareValue: "4", expectedResultPattern: "5 is lower or equal to 4",
 			testResult: false},
-		{label: "op=gt, 5 <= 5", op: "lte", flagVal: "5",
+		{label: "op=lte, 5 <= 5", op: "lte", flagVal: "5",
 			compareValue: "5", expectedResultPattern: "5 is lower or equal to 5",
 			testResult: true},
+		{label: "op=lte, b <= 5", op: "lte", flagVal: "b",
+			compareValue: "5", expectedResultPattern: "Invalid Number(s) used for comparison",
+			testResult: false, expectedToFail: true},
+		{label: "op=lte, a <= b", op: "lte", flagVal: "a",
+			compareValue: "b", expectedResultPattern: "Invalid Number(s) used for comparison",
+			testResult: false, expectedToFail: true},
 
 		// Test Op "has"
 		{label: "op=gt, both empty", op: "has", flagVal: "",
@@ -617,30 +627,30 @@ func TestCompareOp(t *testing.T) {
 			testResult: false},
 
 		// Test Op "nothave"
-		{label: "op=gt, both empty", op: "nothave", flagVal: "",
+		{label: "op=nothave, both empty", op: "nothave", flagVal: "",
 			compareValue: "", expectedResultPattern: " '' does not have ''",
 			testResult: false},
-		{label: "op=gt, flagVal=empty", op: "nothave", flagVal: "",
+		{label: "op=nothave, flagVal=empty", op: "nothave", flagVal: "",
 			compareValue: "blah", expectedResultPattern: " '' does not have 'blah'",
 			testResult: true},
-		{label: "op=gt, compareValue=empty", op: "nothave", flagVal: "blah",
+		{label: "op=nothave, compareValue=empty", op: "nothave", flagVal: "blah",
 			compareValue: "", expectedResultPattern: " 'blah' does not have ''",
 			testResult: false},
-		{label: "op=gt, 'blah' not have 'la'", op: "nothave", flagVal: "blah",
+		{label: "op=nothave, 'blah' not have 'la'", op: "nothave", flagVal: "blah",
 			compareValue: "la", expectedResultPattern: " 'blah' does not have 'la'",
 			testResult: false},
-		{label: "op=gt, 'blah' not have 'LA'", op: "nothave", flagVal: "blah",
+		{label: "op=nothave, 'blah' not have 'LA'", op: "nothave", flagVal: "blah",
 			compareValue: "LA", expectedResultPattern: " 'blah' does not have 'LA'",
 			testResult: true},
-		{label: "op=gt, 'blah' not have 'lo'", op: "nothave", flagVal: "blah",
+		{label: "op=nothave, 'blah' not have 'lo'", op: "nothave", flagVal: "blah",
 			compareValue: "lo", expectedResultPattern: " 'blah' does not have 'lo'",
 			testResult: true},
 
 		// Test Op "regex"
-		{label: "op=gt, both empty", op: "regex", flagVal: "",
+		{label: "op=regex, both empty", op: "regex", flagVal: "",
 			compareValue: "", expectedResultPattern: " '' matched by ''",
 			testResult: true},
-		{label: "op=gt, flagVal=empty", op: "regex", flagVal: "",
+		{label: "op=regex, flagVal=empty", op: "regex", flagVal: "",
 			compareValue: "blah", expectedResultPattern: " '' matched by 'blah'",
 			testResult: false},
 
@@ -663,6 +673,9 @@ func TestCompareOp(t *testing.T) {
 		if c.expectedToFail {
 			if err == nil {
 				t.Errorf("Expected error for %s, but instead got none", c.label)
+			}
+			if expectedResultPattern != c.expectedResultPattern {
+				t.Errorf("'expectedResultPattern' did not match - label: %q op: %q expected 'expectedResultPattern':%q  got:%q\n", c.label, c.op, c.expectedResultPattern, expectedResultPattern)
 			}
 			continue
 		}
