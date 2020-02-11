@@ -187,7 +187,7 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 	if t.Set {
 		if t.Compare.Op != "" {
 			flagVal := getFlagValue(output, t.Flag)
-			ExpectedResult, TestResult, err = compareOp(t.Compare.Op, flagVal, t.Compare.Value)
+			TestResult, ExpectedResult, err = compareOp(t.Compare.Op, flagVal, t.Compare.Value)
 			if err != nil {
 				return
 			}
@@ -204,7 +204,7 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 	return TestResult, ExpectedResult, err
 }
 
-func compareOp(tCompareOp string, flagVal string, tCompareValue string) (string, bool, error) {
+func compareOp(tCompareOp string, flagVal string, tCompareValue string) (bool, string, error) {
 	expectedResultPattern := ""
 	testResult := false
 
@@ -233,7 +233,7 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (string,
 		a, b, err := toNumeric(flagVal, tCompareValue)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Not numeric value - flag: %q - compareValue: %q %v\n", flagVal, tCompareValue, err)
-			return "", false, fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
+			return false, "", fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
 		}
 		switch tCompareOp {
 		case "gt":
@@ -275,10 +275,10 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (string,
 	}
 
 	if expectedResultPattern == "" {
-		return expectedResultPattern, testResult, nil
+		return testResult, expectedResultPattern, nil
 	}
 
-	return fmt.Sprintf(expectedResultPattern, flagVal, tCompareValue), testResult, nil
+	return testResult, fmt.Sprintf(expectedResultPattern, flagVal, tCompareValue), nil
 }
 
 func allElementsValid(s, t []string) bool {

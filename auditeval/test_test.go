@@ -659,8 +659,7 @@ func TestCompareOp(t *testing.T) {
 	}
 
 	for _, c := range cases {
-
-		expectedResultPattern, testResult, err := compareOp(c.op, c.flagVal, c.compareValue)
+		testResult, expectedResultPattern, err := compareOp(c.op, c.flagVal, c.compareValue)
 		if c.expectedToFail {
 			if err == nil {
 				t.Errorf("Expected error for %s, but instead got none", c.label)
