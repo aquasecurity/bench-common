@@ -38,8 +38,7 @@ type Config struct {
 	Filename string
 }
 
-// BuildOutputter build new outputter. Depending on the parameters
-// passed will return either a JSON outputter or a Console outputter.
+// BuildOutputter builds a new outputter
 func BuildOutputter(summary check.Summary, config *Config) Outputter {
 	if summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0 || summary.Info > 0 {
 		switch config.Format {
