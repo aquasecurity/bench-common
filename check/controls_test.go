@@ -15,6 +15,11 @@
 package check
 
 import (
+	"bytes"
+	"encoding/json"
+	"encoding/xml"
+	"github.com/onsi/ginkgo/reporters"
+	"strings"
 	"testing"
 )
 
@@ -120,5 +125,126 @@ func TestSummarizeGroup(t *testing.T) {
 		if actual != test.Expected {
 			t.Errorf("test %d fail: expected: %v actual: %v\ntest details: %+v\n", i, test.Expected, actual, test)
 		}
+	}
+}
+
+func TestControls_JUnitIncludesJSON(t *testing.T) {
+	testCases := []struct {
+		desc   string
+		input  *Controls
+		expect []byte
+	}{
+		{
+			desc: "Serializes to junit",
+			input: &Controls{
+				Groups: []*Group{
+					{
+						ID: "g1",
+						Checks: []*Check{
+							{ID: "check1id", Description: "check1text", State: PASS},
+						},
+					},
+				},
+			},
+			expect: []byte(`<testsuite name="" tests="0" failures="0" errors="0" time="0">
+    <testcase name="check1id check1text" classname="" time="0">
+        <system-out>{&#34;test_number&#34;:&#34;check1id&#34;,&#34;test_desc&#34;:&#34;check1text&#34;,&#34;SubChecks&#34;:null,&#34;audit_type&#34;:&#34;&#34;,&#34;audit&#34;:null,&#34;type&#34;:&#34;&#34;,&#34;test_info&#34;:null,&#34;status&#34;:&#34;PASS&#34;,&#34;actual_value&#34;:&#34;&#34;,&#34;expected_result&#34;:&#34;&#34;,&#34;scored&#34;:false,&#34;IsMultiple&#34;:false}</system-out>
+    </testcase>
+</testsuite>`),
+		},
+		{
+			desc: "Summary values come from summary not checks",
+			input: &Controls{
+				Summary: Summary{
+					Fail: 99,
+					Pass: 100,
+					Warn: 101,
+					Info: 102,
+				},
+				Groups: []*Group{
+					{
+						ID: "g1",
+						Checks: []*Check{
+							{ID: "check1id", Description: "check1text", State: PASS},
+						},
+					},
+				},
+			},
+			expect: []byte(`<testsuite name="" tests="402" failures="99" errors="0" time="0">
+    <testcase name="check1id check1text" classname="" time="0">
+        <system-out>{&#34;test_number&#34;:&#34;check1id&#34;,&#34;test_desc&#34;:&#34;check1text&#34;,&#34;SubChecks&#34;:null,&#34;audit_type&#34;:&#34;&#34;,&#34;audit&#34;:null,&#34;type&#34;:&#34;&#34;,&#34;test_info&#34;:null,&#34;status&#34;:&#34;PASS&#34;,&#34;actual_value&#34;:&#34;&#34;,&#34;expected_result&#34;:&#34;&#34;,&#34;scored&#34;:false,&#34;IsMultiple&#34;:false}</system-out>
+    </testcase>
+</testsuite>`),
+		},
+		{
+			desc: "Warn and Info are considered skips and failed tests properly reported",
+			input: &Controls{
+				Groups: []*Group{
+					{
+						ID: "g1",
+						Checks: []*Check{
+							{ID: "check1id", Description: "check1text", State: PASS},
+							{ID: "check2id", Description: "check2text", State: INFO},
+							{ID: "check3id", Description: "check3text", State: WARN},
+							{ID: "check4id", Description: "check4text", State: FAIL},
+						},
+					},
+				},
+			},
+			expect: []byte(`<testsuite name="" tests="0" failures="0" errors="0" time="0">
+    <testcase name="check1id check1text" classname="" time="0">
+        <system-out>{&#34;test_number&#34;:&#34;check1id&#34;,&#34;test_desc&#34;:&#34;check1text&#34;,&#34;SubChecks&#34;:null,&#34;audit_type&#34;:&#34;&#34;,&#34;audit&#34;:null,&#34;type&#34;:&#34;&#34;,&#34;test_info&#34;:null,&#34;status&#34;:&#34;PASS&#34;,&#34;actual_value&#34;:&#34;&#34;,&#34;expected_result&#34;:&#34;&#34;,&#34;scored&#34;:false,&#34;IsMultiple&#34;:false}</system-out>
+    </testcase>
+    <testcase name="check2id check2text" classname="" time="0">
+        <skipped></skipped>
+        <system-out>{&#34;test_number&#34;:&#34;check2id&#34;,&#34;test_desc&#34;:&#34;check2text&#34;,&#34;SubChecks&#34;:null,&#34;audit_type&#34;:&#34;&#34;,&#34;audit&#34;:null,&#34;type&#34;:&#34;&#34;,&#34;test_info&#34;:null,&#34;status&#34;:&#34;INFO&#34;,&#34;actual_value&#34;:&#34;&#34;,&#34;expected_result&#34;:&#34;&#34;,&#34;scored&#34;:false,&#34;IsMultiple&#34;:false}</system-out>
+    </testcase>
+    <testcase name="check3id check3text" classname="" time="0">
+        <skipped></skipped>
+        <system-out>{&#34;test_number&#34;:&#34;check3id&#34;,&#34;test_desc&#34;:&#34;check3text&#34;,&#34;SubChecks&#34;:null,&#34;audit_type&#34;:&#34;&#34;,&#34;audit&#34;:null,&#34;type&#34;:&#34;&#34;,&#34;test_info&#34;:null,&#34;status&#34;:&#34;WARN&#34;,&#34;actual_value&#34;:&#34;&#34;,&#34;expected_result&#34;:&#34;&#34;,&#34;scored&#34;:false,&#34;IsMultiple&#34;:false}</system-out>
+    </testcase>
+    <testcase name="check4id check4text" classname="" time="0">
+        <failure type=""></failure>
+        <system-out>{&#34;test_number&#34;:&#34;check4id&#34;,&#34;test_desc&#34;:&#34;check4text&#34;,&#34;SubChecks&#34;:null,&#34;audit_type&#34;:&#34;&#34;,&#34;audit&#34;:null,&#34;type&#34;:&#34;&#34;,&#34;test_info&#34;:null,&#34;status&#34;:&#34;FAIL&#34;,&#34;actual_value&#34;:&#34;&#34;,&#34;expected_result&#34;:&#34;&#34;,&#34;scored&#34;:false,&#34;IsMultiple&#34;:false}</system-out>
+    </testcase>
+</testsuite>`),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			junitBytes, err := tc.input.JUnit()
+			if err != nil {
+				t.Fatalf("Failed to serialize to JUnit: %v", err)
+			}
+
+			var out reporters.JUnitTestSuite
+			if err := xml.Unmarshal(junitBytes, &out); err != nil {
+				t.Fatalf("Unable to deserialize from resulting JUnit: %v", err)
+			}
+
+			// Check that each check was serialized as json and stored as systemOut.
+			for iGroup, group := range tc.input.Groups {
+				for iCheck, check := range group.Checks {
+					jsonBytes, err := json.Marshal(check)
+					if err != nil {
+						t.Fatalf("Failed to serialize to JUnit: %v", err)
+					}
+
+					if strings.TrimSpace(out.TestCases[iGroup*iCheck+iCheck].SystemOut) != strings.TrimSpace(string(jsonBytes)) {
+						t.Errorf("Expected\n%v\n\tbut got\n%q",
+							out.TestCases[iGroup*iCheck+iCheck].SystemOut,
+							string(jsonBytes),
+						)
+					}
+				}
+			}
+
+			if !bytes.Equal(junitBytes, tc.expect) {
+				t.Errorf("Expected\n\t%v\n\tbut got\n\t%v",
+					string(tc.expect),
+					string(junitBytes),
+				)
+			}
+		})
 	}
 }
