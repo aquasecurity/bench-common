@@ -24,7 +24,9 @@ const (
 	// JSONFormat send json output to console
 	JSONFormat Format = iota + 10
 	// PgSQLFormat send output to pgsql DB
- 	PgSQLFormat
+	PgSQLFormat
+	// JUnitFormat send JUnit output to the console
+	JUnitFormat
 	// ConsoleFormat send output console
 	ConsoleFormat
 )
@@ -32,20 +34,18 @@ const (
 // Config configuration for either JSON or Console outputter
 type Config struct {
 	Console
-	JSON
-	Format Format
-	Values     map[string]string
+	Format   Format
+	Filename string
 }
 
-// BuildOutputter build new outputter. Depending on the parameters
-// passed will return either a JSON outputter or a Console outputter.
+// BuildOutputter builds a new outputter
 func BuildOutputter(summary check.Summary, config *Config) Outputter {
 	if summary.Fail > 0 || summary.Warn > 0 || summary.Pass > 0 || summary.Info > 0 {
 		switch config.Format {
 		case JSONFormat:
-			return NewJSON(config.JSON.Filename)
-		case PgSQLFormat:
-			return NewPgSQL(config.Values)
+			return NewJSON(config.Filename)
+		case JUnitFormat:
+			return NewJUnit(config.Filename)
 		}
 	}
 

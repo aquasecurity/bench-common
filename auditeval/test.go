@@ -32,8 +32,9 @@ import (
 type binOp string
 
 const (
-	and binOp = "and"
-	or        = "or"
+	and                   binOp = "and"
+	or                          = "or"
+	defaultArraySeparator       = ","
 )
 
 type testItem struct {
@@ -217,7 +218,7 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 				flagVal = getFlagValue(output, t.Flag)
 			}
 
-			ExpectedResult, TestResult = compareOp(t.Compare.Op, flagVal, t.Compare.Value)
+			TestResult, ExpectedResult, err = compareOp(t.Compare.Op, flagVal, t.Compare.Value)
 		} else {
 			ExpectedResult = fmt.Sprintf("'%s' Is present", t.Flag)
 			TestResult, _ = regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, output)
@@ -231,13 +232,13 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 	return TestResult, ExpectedResult, err
 }
 
-func compareOp(tCompareOp string, flagVal string, tCompareValue string) (string, bool) {
+func compareOp(tCompareOp string, flagVal string, tCompareValue string) (bool, string, error) {
 	expectedResultPattern := ""
-	var TestResult bool
+	testResult := false
 
 	switch tCompareOp {
 	case "eq":
-		expectedResultPattern = "'%s' Is equal to '%s'"
+		expectedResultPattern = "'%s' is equal to '%s'"
 		value := strings.ToLower(flagVal)
 		// In case the result should be empty, changing the status to indicate "No output"
 		if tCompareValue == "" && flagVal == "" {
@@ -245,59 +246,111 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (string,
 		}
 		// Do case insensitive comparison for booleans ...
 		if value == "false" || value == "true" {
-			TestResult = value == tCompareValue
+			testResult = value == tCompareValue
 		} else {
-			TestResult = flagVal == tCompareValue
+			testResult = flagVal == tCompareValue
 		}
 
 	case "noteq":
-		expectedResultPattern = "'%s' Is not equal to '%s'"
+		expectedResultPattern = "'%s' is not equal to '%s'"
 		value := strings.ToLower(flagVal)
-		// Do case insensitive comparaison for booleans ...
+		// Do case insensitive comparison for booleans ...
 		if value == "false" || value == "true" {
-			TestResult = !(value == tCompareValue)
+			testResult = !(value == tCompareValue)
 		} else {
-			TestResult = !(flagVal == tCompareValue)
+			testResult = !(flagVal == tCompareValue)
 		}
 
-	case "gt":
-		expectedResultPattern = "%s Is greater then %s"
+	case "gt", "gte", "lt", "lte":
 		a, b, err := toNumeric(flagVal, tCompareValue)
-		if err == nil {
-			TestResult = a > b
+		if err != nil {
+			return false, "Invalid Number(s) used for comparison", fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
 		}
+		switch tCompareOp {
+		case "gt":
+			expectedResultPattern = "%s is greater than %s"
+			testResult = a > b
 
-	case "gte":
-		expectedResultPattern = "%s Is greater or equal to %s"
-		a, b, err := toNumeric(flagVal, tCompareValue)
-		if err == nil {
-			TestResult = a >= b
-		}
+		case "gte":
+			expectedResultPattern = "%s is greater or equal to %s"
+			testResult = a >= b
 
-	case "lt":
-		expectedResultPattern = "%s Is lower then %s"
-		a, b, err := toNumeric(flagVal, tCompareValue)
-		if err == nil {
-			TestResult = a < b
-		}
+		case "lt":
+			expectedResultPattern = "%s is lower than %s"
+			testResult = a < b
 
-	case "lte":
-		expectedResultPattern = "%s Is lower or equal to %s"
-		a, b, err := toNumeric(flagVal, tCompareValue)
-		if err == nil {
-			TestResult = a <= b
+		case "lte":
+			expectedResultPattern = "%s is lower or equal to %s"
+			testResult = a <= b
 		}
 
 	case "has":
-		expectedResultPattern = "'%s' Has '%s'"
-		TestResult = strings.Contains(flagVal, tCompareValue)
+		expectedResultPattern = "'%s' has '%s'"
+		testResult = strings.Contains(flagVal, tCompareValue)
 
 	case "nothave":
-		expectedResultPattern = " '%s' Not have '%s'"
-		TestResult = !strings.Contains(flagVal, tCompareValue)
+		expectedResultPattern = " '%s' does not have '%s'"
+		testResult = !strings.Contains(flagVal, tCompareValue)
+
+	case "regex":
+		expectedResultPattern = " '%s' matched by '%s'"
+		opRe := regexp.MustCompile(tCompareValue)
+		testResult = opRe.MatchString(flagVal)
+
+	case "valid_elements":
+		expectedResultPattern = "'%s' contains valid elements from '%s'"
+		s := splitAndRemoveLastSeparator(flagVal, defaultArraySeparator)
+		target := splitAndRemoveLastSeparator(tCompareValue, defaultArraySeparator)
+		testResult = allElementsValid(s, target)
+	default:
+		return testResult, expectedResultPattern, nil
 	}
 
-	return fmt.Sprintf(expectedResultPattern, flagVal, tCompareValue), TestResult
+	return testResult, fmt.Sprintf(expectedResultPattern, flagVal, tCompareValue), nil
+}
+
+func allElementsValid(s, t []string) bool {
+	sourceEmpty := len(s) == 0
+	targetEmpty := len(t) == 0
+
+	if sourceEmpty && targetEmpty {
+		return true
+	}
+
+	// XOR comparison -
+	//     if either value is empty and the other is not empty,
+	//     not all elements are valid
+	if (sourceEmpty || targetEmpty) && !(sourceEmpty && targetEmpty) {
+		return false
+	}
+
+	for _, sv := range s {
+		found := false
+		for _, tv := range t {
+			if sv == tv {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+func splitAndRemoveLastSeparator(s, sep string) []string {
+	cleanS := strings.TrimRight(strings.TrimSpace(s), sep)
+	if len(cleanS) == 0 {
+		return []string{}
+	}
+
+	ts := strings.Split(cleanS, sep)
+	for i := range ts {
+		ts[i] = strings.TrimSpace(ts[i])
+	}
+
+	return ts
 }
 
 func unmarshal(s string, jsonInterface *interface{}) error {

@@ -19,35 +19,8 @@ func TestHandle(t *testing.T) {
 	testData := `{"id":"12121","text":"testControl","tests":null,"total_pass":0,"total_fail":0,"total_warn":0,"total_info":0,"DefinedConstraints":null}`
 	testFilename := filepath.Join(dir, "test.json")
 
-	//  ErrMissingFilename
-	f := &file{}
-	err = f.Handle(testData)
-	if err == nil {
-		t.Errorf("Unable to handle: %v", err)
-	}
-
-	//  ErrMissingFileManager
-	f = &file{
+	f := &file{
 		Filename: testFilename,
-	}
-	err = f.Handle(testData)
-	if err == nil {
-		t.Errorf("Unable to handle: %v", err)
-	}
-
-	//  ErrMissingIOWriter
-	f = &file{
-		Filename: testFilename,
-	}
-	err = f.Handle(testData)
-	if err == nil {
-		t.Errorf("Unable to handle: %v", err)
-	}
-
-	// Check file output
-	f = &file{
-		Filename: testFilename,
-		ioWriter: &ioWriteDelegate{},
 	}
 	err = f.Handle(testData)
 	if err != nil {
@@ -67,5 +40,4 @@ func TestHandle(t *testing.T) {
 	if testData != outTestFileData {
 		t.Errorf("Output Test Data does not match: [%s]  - [%s]", testData, outTestFileData)
 	}
-
 }

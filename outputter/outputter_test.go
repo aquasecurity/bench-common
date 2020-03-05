@@ -2,8 +2,9 @@ package outputter
 
 import (
 	"fmt"
-	"github.com/aquasecurity/bench-common/check"
 	"testing"
+
+	"github.com/aquasecurity/bench-common/check"
 )
 
 func TestBuildOutputterJSON(t *testing.T) {
@@ -47,52 +48,6 @@ func TestBuildOutputterJSON(t *testing.T) {
 			o := BuildOutputter(tc.summary, tc.config)
 			if _, match := o.(*JSON); tc.match != match {
 				t.Errorf("TestBuildOutputterJSON/%d failed - Expected '*outputter.JSON' but got '%T'", i, o)
-			}
-		})
-	}
-}
-
-func TestBuildOutputterPgSQL(t *testing.T) {
-	testCases := []struct {
-		summary check.Summary
-		config  *Config
-		match   bool
-	}{
-		{
-			summary: check.Summary{
-				Pass: 1,
-			},
-			config: &Config{
-				Format: PgSQLFormat,
-			},
-			match: true,
-		},
-		{
-			summary: check.Summary{
-				Pass: 1,
-			},
-			config: &Config{},
-			match:  false,
-		},
-		{
-			summary: check.Summary{},
-			config:  &Config{},
-			match:   false,
-		},
-		{
-			summary: check.Summary{},
-			config: &Config{
-				Format: JSONFormat,
-			},
-			match: false,
-		},
-	}
-
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			o := BuildOutputter(tc.summary, tc.config)
-			if _, match := o.(*PgSQL); tc.match != match {
-				t.Errorf("TestBuildOutputterPgSQL/%d failed - Expected '*outputter.PgSQL' but got '%T'", i, o)
 			}
 		})
 	}

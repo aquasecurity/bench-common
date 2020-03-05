@@ -9,7 +9,6 @@ import (
 // JSON outputter functionality for JSON payload
 type JSON struct {
 	fileHandler fileHandler
-	Filename    string
 	controls    *check.Controls
 }
 
