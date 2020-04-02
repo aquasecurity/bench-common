@@ -37,13 +37,19 @@ func Main(filePath string, constraints []string) {
 
 func outputResults(controls *check.Controls, summary check.Summary) error {
 	format := outputter.ConsoleFormat
+	if jsonFmt {
+		format = outputter.JSONFormat
+	}
+
 	config := &outputter.Config{
 		Console: outputter.Console{
 			NoRemediations:    noRemediations,
 			IncludeTestOutput: includeTestOutput,
 		},
-		Format: format,
+		Format:   format,
+		Filename: outputFile,
 	}
+
 	o := outputter.BuildOutputter(summary, config)
 
 	return o.Output(controls, summary)
