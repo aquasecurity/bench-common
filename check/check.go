@@ -56,7 +56,7 @@ func (audit Audit) Execute(customConfig ...interface{}) (result string, errMessa
 		return result, errMessage, WARN
 	}
 
-	res, err := exec.Command("sh", "-c", string(audit)).CombinedOutput()
+	res, err := exec.Command("sh", "-c", strings.Replace(string(audit), "\\|", "|", -1)).CombinedOutput()
 
 	if err != nil {
 		errMessage = err.Error()
@@ -210,7 +210,23 @@ func textToCommand(s string) (cmds []*exec.Cmd) {
 
 	cp := strings.Split(s, "|")
 
+	var newCP []string
+	joinNextPart := false
+
+	// Separate between pipeline and or, differentiate by | and \\|
 	for _, v := range cp {
+		if joinNextPart {
+			newCP[len(newCP)-1] = strings.Join([]string{newCP[len(newCP)-1], strings.TrimSuffix(v, "\\")}, "|")
+			joinNextPart = false
+		} else {
+			newCP = append(newCP, strings.TrimSuffix(v, "\\"))
+		}
+		if strings.HasSuffix(v, "\\") {
+			joinNextPart = true
+		}
+	}
+
+	for _, v := range newCP {
 		v = strings.Trim(v, " ")
 
 		// TODO:
