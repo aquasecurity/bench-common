@@ -1,6 +1,8 @@
 package check
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/aquasecurity/bench-common/auditeval"
@@ -190,5 +192,68 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+func TestRunAuditCommands(t *testing.T) {
+
+	cases := []struct {
+		b   BaseCheck
+		s   State
+		o   string
+		err bool
+	}{
+		{
+			// 0
+			b: BaseCheck{auditer: Audit("anything"), Type: "manual"},
+			s: "WARN",
+		}, {
+			// 1
+			b: BaseCheck{auditer: Audit("anything"), Type: "skip"},
+			s: "INFO",
+		}, {
+			// 2
+			// If the audit command can't be run, we eventually report FAIL but this is done in
+			// (c *Check) Run() based on the final output
+			b: BaseCheck{auditer: Audit("anything")},
+			s: "WARN", err: true, o: "sh: anything: command not found",
+		}, {
+			// 3
+			b: BaseCheck{auditer: Audit("echo hello")},
+			o: "hello",
+		}, {
+			// 4
+			b:   BaseCheck{auditer: Audit("echo hello | grep notInOutput")},
+			err: true,
+		}, {
+			// 5
+			b: BaseCheck{auditer: Audit("echo hello | grep hel")},
+			o: "hello",
+		}, {
+			// 6
+			b: BaseCheck{auditer: Audit("echo $(ls . | grep 'bench')")},
+			o: "bench.go bench_test.go",
+		}, {
+			// 7
+			b: BaseCheck{auditer: Audit("echo $(ls . | grep 'bench') | anything")},
+			s: "WARN", err: true, o: "sh: anything: command not found",
+		},
+	}
+
+	for i, c := range cases {
+		output, errmsg, state := runAuditCommands(c.b)
+		if state != c.s {
+			t.Errorf("Test %d: expected state %s, got %s", i, c.s, state)
+		}
+		if strings.TrimSpace(output) != c.o {
+			t.Errorf("Test %d: expected output %s, got %s", i, c.o, output)
+		}
+		if (errmsg != "") && !c.err {
+			t.Errorf("Test %d: unexpected errmsg %s", i, errmsg)
+		}
+		if (errmsg == "") && c.err {
+			t.Errorf("Test %d unexpectedly didn't return an error message", i)
+		}
+		fmt.Printf("output %s, err %s\n", output, errmsg)
 	}
 }

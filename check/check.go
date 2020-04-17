@@ -17,7 +17,6 @@ package check
 import (
 	"fmt"
 	"os/exec"
-	"regexp"
 	"strings"
 
 	"github.com/aquasecurity/bench-common/auditeval"
@@ -39,29 +38,19 @@ type Audit string
 // Execute method called by the main logic to execute the Audit's Execute type.
 func (audit Audit) Execute(customConfig ...interface{}) (result string, errMessage string, state State) {
 
-	commands := textToCommand(string(audit))
-
-	// Check if command exists or exit with WARN.
-	for _, cmd := range commands {
-		if !isShellCommand(cmd.Path) {
-			glog.V(1).Infof("%s: command not found", cmd.Path)
-			return result, errMessage, WARN
-		}
-	}
-
-	// Run commands.
-	n := len(commands)
-	if n == 0 {
-		// Likely a warning message.
-		return result, errMessage, WARN
-	}
-
 	res, err := exec.Command("sh", "-c", string(audit)).CombinedOutput()
-
+	// Errors mean the audit command failed, but that might be what we expect
+	// for example, if we grep for something that is not found, there is a non-zero exit code
+	// But it is a problem if we can't find one of the audit commands to execute
 	if err != nil {
 		errMessage = err.Error()
 	}
-	return string(res), errMessage, ""
+	result = string(res)
+	if strings.Contains(result, "command not found") {
+		return result, result, WARN
+	}
+
+	return result, errMessage, state
 }
 
 const (
@@ -198,68 +187,6 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 		glog.V(1).Info("Test output contains a nil value")
 		return
 	}
-}
-
-// textToCommand transforms an input text representation of commands to be
-// run into a slice of commands.
-// TODO: Make this more robust.
-func textToCommand(s string) (cmds []*exec.Cmd) {
-	if s == "" {
-		return cmds
-	}
-
-	cp := strings.Split(s, "|")
-
-	for _, v := range cp {
-		v = strings.Trim(v, " ")
-
-		// TODO:
-		// GOAL: To split input text into arguments for exec.Cmd.
-		//
-		// CHALLENGE: The input text may contain quoted strings that
-		// must be passed as a unit to exec.Cmd.
-		// eg. bash -c 'foo bar'
-		// 'foo bar' must be passed as unit to exec.Cmd if not the command
-		// will fail when it is executed.
-		// eg. exec.Cmd("bash", "-c", "foo bar")
-		//
-		// PROBLEM: Current solution assumes the grouped string will always
-		// be at the end of the input text.
-		re := regexp.MustCompile(`^(.*)(['"].*['"])$`)
-		grps := re.FindStringSubmatch(v)
-
-		var cs []string
-		if len(grps) > 0 {
-			s := strings.Trim(grps[1], " ")
-			cs = strings.Split(s, " ")
-
-			s1 := grps[len(grps)-1]
-			s1 = strings.Trim(s1, "'\"")
-
-			cs = append(cs, s1)
-		} else {
-			cs = strings.Split(v, " ")
-		}
-
-		cmd := exec.Command(cs[0], cs[1:]...)
-		cmds = append(cmds, cmd)
-	}
-
-	return cmds
-}
-
-func isShellCommand(s string) bool {
-	cmd := exec.Command("/bin/sh", "-c", "command -v "+s)
-
-	out, err := cmd.Output()
-	if err != nil {
-		return false
-	}
-
-	if strings.Contains(string(out), s) {
-		return true
-	}
-	return false
 }
 
 func runAuditCommands(c BaseCheck) (output, errMessage string, state State) {
