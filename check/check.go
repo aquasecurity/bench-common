@@ -139,7 +139,7 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 	// without tests return a 'WARN' to alert
 	// the user that this check needs attention
 	if c.Scored && len(strings.TrimSpace(c.Type)) == 0 && c.Tests == nil {
-		c.Reason = "There are no suitable tests"
+		c.Reason = "There are no test items"
 		c.State = WARN
 		return
 	}
