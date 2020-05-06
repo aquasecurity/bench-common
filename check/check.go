@@ -160,9 +160,9 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 		subCheck = getFirstValidSubCheck(c.SubChecks, definedConstraints)
 
 		if subCheck == nil {
-			c.Reason = "Failed to find a valid sub check, check "
+			c.Reason = "Failed to find a valid sub check, check your constrains "
 			c.State = WARN
-			glog.V(1).Info("Failed to find a valid sub check, check ", c.ID)
+			glog.V(1).Info("Failed to find a valid sub check, check your constrains")
 			return
 		}
 	}
