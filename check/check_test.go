@@ -1,6 +1,7 @@
 package check
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -193,70 +194,68 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 		}
 	}
 }
-func TestTextToCommand(t *testing.T) {
-	type TestCase struct {
-		auditCommand          string
-		expectedSlicedCommand []string
+
+func TestRunAuditCommands(t *testing.T) {
+
+	cases := []struct {
+		b   BaseCheck
+		s   State
+		o   string
+		err bool
+	}{
+		{
+			// 0
+			b: BaseCheck{auditer: Audit("anything"), Type: "manual"},
+			s: "WARN",
+		}, {
+			// 1
+			b: BaseCheck{auditer: Audit("anything"), Type: "skip"},
+			s: "INFO",
+		}, {
+			// 2
+			// If the audit command can't be run, we eventually report FAIL but this is done in
+			// (c *Check) Run() based on the final output
+			b: BaseCheck{auditer: Audit("anything")},
+			s: "", err: true, o: "sh: 1: anything: not found",
+		}, {
+			// 3
+			b: BaseCheck{auditer: Audit("echo hello")},
+			o: "hello",
+		}, {
+			// 4
+			b:   BaseCheck{auditer: Audit("echo hello | grep notInOutput")},
+			err: true,
+		}, {
+			// 5
+			b: BaseCheck{auditer: Audit("echo hello | grep hel")},
+			o: "hello",
+		}, {
+			// 6
+			b: BaseCheck{auditer: Audit("echo $(ls . | grep 'bench')")},
+			o: "bench.go bench_test.go",
+		}, {
+			// 7
+			// Like in test #2 the final state will be fail, but currently in runAuditCommands
+			// is just an empty string
+			b: BaseCheck{auditer: Audit("echo $(ls . | grep 'bench') | anything")},
+			s: "", err: true, o: "sh: 1: anything: not found",
+		},
 	}
 
-	// For each test case, we want get the different commands separated by | and exclude the \\|
-	// which stand for the use of | as OR operator and not as a pipe.
-	testCases := []TestCase{
-		{
-			// Test for mixed case of pipeline and or cases
-			auditCommand: "grep -E -i \"(\\\\v\\|\\\\r\\|\\\\m\\|\\\\s)\\|$(grep '^ID=' /etc/os-release | cut -d= -f2 | sed -e 's/\"//g'))\" /etc/motd",
-			expectedSlicedCommand: []string{
-				"grep -E -i \"(\\\\v|\\\\r|\\\\m|\\\\s)|$(grep '^ID=' /etc/os-release",
-				"cut -d= -f2",
-				"sed -e 's/\"//g'))\" /etc/motd"},
-		},
-		{
-			// Test for regular pipe
-			auditCommand: "lsmod | grep cramfs",
-			expectedSlicedCommand: []string{
-				"lsmod",
-				"grep cramfs"},
-		},
-		{
-			// Test for | as Or
-			auditCommand: "grep -E \"^(server\\|pool)\" /etc/ntp.conf",
-			expectedSlicedCommand: []string{
-				"grep -E \"^(server|pool)\" /etc/ntp.conf"},
-		},
-	}
-	for i, testCase := range testCases {
-		commands := textToCommand(testCase.auditCommand)
-		for j, command := range commands {
-			testSlicedCommand := strings.Join(command.Args[:], " ")
-			if testSlicedCommand != testCase.expectedSlicedCommand[j] {
-				t.Errorf("case %d expected:%v, got:%v\n", i, testCase.expectedSlicedCommand[j], testSlicedCommand)
-			}
+	for i, c := range cases {
+		output, errmsg, state := runAuditCommands(c.b)
+		if state != c.s {
+			t.Errorf("Test %d: expected state %s, got %s", i, c.s, state)
 		}
-	}
-}
-func TestIsShellCommand(t *testing.T) {
-	type TestCase struct {
-		command  string
-		Expected bool
-	}
-
-	// For each test case, we want to find the first subcheck that matches the constraints in testDefinedConstraints
-	testCases := []TestCase{
-		{
-			// Exist command
-			command:  "/bin/grep",
-			Expected: true,
-		},
-		{
-			// Non exist command
-			command:  "/bin/nonExistCommand",
-			Expected: false,
-		},
-	}
-	for ii, testCase := range testCases {
-		if isShellCommand(testCase.command) != testCase.Expected {
-			t.Errorf("case %d expected for isShellCommand(\"%v\") to return: %v\n", ii, testCase.command, testCase.Expected)
+		if strings.TrimSpace(output) != c.o {
+			t.Errorf("Test %d: expected output %s, got %s", i, c.o, output)
 		}
+		if (errmsg != "") && !c.err {
+			t.Errorf("Test %d: unexpected errmsg %s", i, errmsg)
+		}
+		if (errmsg == "") && c.err {
+			t.Errorf("Test %d unexpectedly didn't return an error message", i)
+		}
+		fmt.Printf("output %s, err %s\n", output, errmsg)
 	}
-
 }
