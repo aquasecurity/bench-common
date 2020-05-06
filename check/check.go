@@ -17,7 +17,6 @@ package check
 import (
 	"fmt"
 	"os/exec"
-	"regexp"
 	"strings"
 
 	"github.com/aquasecurity/bench-common/auditeval"
@@ -39,25 +38,10 @@ type Audit string
 // Execute method called by the main logic to execute the Audit's Execute type.
 func (audit Audit) Execute(customConfig ...interface{}) (result string, errMessage string, state State) {
 
-	commands := textToCommand(string(audit))
-
-	// Check if command exists or exit with WARN.
-	for _, cmd := range commands {
-		if !isShellCommand(cmd.Path) {
-			glog.V(1).Infof("%s: command not found", cmd.Path)
-			return result, errMessage, WARN
-		}
-	}
-
-	// Run commands.
-	n := len(commands)
-	if n == 0 {
-		// Likely a warning message.
-		return result, errMessage, WARN
-	}
-
-	res, err := exec.Command("sh", "-c", strings.Replace(string(audit), "\\|", "|", -1)).CombinedOutput()
-
+	res, err := exec.Command("sh", "-c", string(audit)).CombinedOutput()
+	// Errors mean the audit command failed, but that might be what we expect
+	// for example, if we grep for something that is not found, there is a non-zero exit code
+	// But it is a problem if we can't find one of the audit commands to execute
 	if err != nil {
 		errMessage = err.Error()
 	}
@@ -120,6 +104,7 @@ type Check struct {
 	IsMultiple     bool   `yaml:"use_multiple_values"`
 	auditer        Auditer
 	customConfigs  []interface{}
+	Reason         string `json:"reason,omitempty"`
 }
 
 // Group is a collection of similar checks.
@@ -138,12 +123,23 @@ type Group struct {
 func (c *Check) Run(definedConstraints map[string][]string) {
 	// If check type is skip, force result to INFO
 	if c.Type == "skip" {
+		c.Reason = "Test marked as skip"
 		c.State = INFO
 		return
 	}
 
 	//If check type is manual or the check is not scored, force result to WARN
-	if c.Type == "manual" || !c.Scored {
+	if c.Type == "manual" {
+		c.Reason = "Test marked as a manual test"
+		c.State = WARN
+		return
+	}
+
+	// Since this is an Scored check
+	// without tests return a 'WARN' to alert
+	// the user that this check needs attention
+	if c.Scored && len(strings.TrimSpace(c.Type)) == 0 && c.Tests == nil {
+		c.Reason = "There are no suitable tests"
 		c.State = WARN
 		return
 	}
@@ -164,6 +160,7 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 		subCheck = getFirstValidSubCheck(c.SubChecks, definedConstraints)
 
 		if subCheck == nil {
+			c.Reason = "Failed to find a valid sub check, check "
 			c.State = WARN
 			glog.V(1).Info("Failed to find a valid sub check, check ", c.ID)
 			return
@@ -176,6 +173,11 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 
 	if errmsgs != "" {
 		glog.V(2).Info(errmsgs)
+		c.Reason = out
+		// Make output more readable
+		if (errmsgs == "exit status 127" || errmsgs == "exit status 1") && strings.HasSuffix(out, "not found\n") {
+			c.Reason = strings.Replace(c.Reason, "sh: 1:", "Command", -1)
+		}
 	}
 
 	if c.State != "" {
@@ -196,86 +198,9 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 	} else {
 		c.State = WARN
 		glog.V(1).Info("Test output contains a nil value")
+		c.Reason = "Test output contains a nil value"
 		return
 	}
-}
-
-// textToCommand transforms an input text representation of commands to be
-// run into a slice of commands.
-// TODO: Make this more robust.
-func textToCommand(s string) (cmds []*exec.Cmd) {
-	if s == "" {
-		return cmds
-	}
-
-	cp := strings.Split(s, "|")
-
-	var newCP []string
-	joinNextPart := false
-
-	// Separate between pipeline and or, differentiate by | and \\|
-	for _, v := range cp {
-		if joinNextPart {
-			newCP[len(newCP)-1] = strings.Join([]string{newCP[len(newCP)-1], strings.TrimSuffix(v, "\\")}, "|")
-			joinNextPart = false
-		} else {
-			newCP = append(newCP, strings.TrimSuffix(v, "\\"))
-		}
-		if strings.HasSuffix(v, "\\") {
-			joinNextPart = true
-		}
-	}
-
-	for _, v := range newCP {
-		v = strings.Trim(v, " ")
-
-		// TODO:
-		// GOAL: To split input text into arguments for exec.Cmd.
-		//
-		// CHALLENGE: The input text may contain quoted strings that
-		// must be passed as a unit to exec.Cmd.
-		// eg. bash -c 'foo bar'
-		// 'foo bar' must be passed as unit to exec.Cmd if not the command
-		// will fail when it is executed.
-		// eg. exec.Cmd("bash", "-c", "foo bar")
-		//
-		// PROBLEM: Current solution assumes the grouped string will always
-		// be at the end of the input text.
-		re := regexp.MustCompile(`^(.*)(['"].*['"])$`)
-		grps := re.FindStringSubmatch(v)
-
-		var cs []string
-		if len(grps) > 0 {
-			s := strings.Trim(grps[1], " ")
-			cs = strings.Split(s, " ")
-
-			s1 := grps[len(grps)-1]
-			s1 = strings.Trim(s1, "'\"")
-
-			cs = append(cs, s1)
-		} else {
-			cs = strings.Split(v, " ")
-		}
-
-		cmd := exec.Command(cs[0], cs[1:]...)
-		cmds = append(cmds, cmd)
-	}
-
-	return cmds
-}
-
-func isShellCommand(s string) bool {
-	cmd := exec.Command("/bin/sh", "-c", "command -v "+s)
-
-	out, err := cmd.Output()
-	if err != nil {
-		return false
-	}
-
-	if strings.Contains(string(out), s) {
-		return true
-	}
-	return false
 }
 
 func runAuditCommands(c BaseCheck) (output, errMessage string, state State) {
