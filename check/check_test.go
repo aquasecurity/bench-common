@@ -34,13 +34,11 @@ func TestCheck_Run(t *testing.T) {
 
 	checkTypeManual := Check{Type: "manual", Tests: ts, Scored: true, auditer: Audit("ps -ef")}
 	checkTypeSkip := Check{Type: "skip", Tests: ts, Scored: true, auditer: Audit("ps -ef")}
-	checkNotScored := Check{Type: "", Tests: ts, Scored: false, auditer: Audit("ps -ef")}
 	checkNoTests := Check{Type: "", Scored: true, auditer: Audit("")}
 
 	testCases := []TestCase{
 		{check: checkTypeManual, Expected: WARN},
 		{check: checkTypeSkip, Expected: INFO},
-		{check: checkNotScored, Expected: WARN}, // Not scored checks with no type should be marked warn
 		{check: checkNoTests, Expected: WARN},   // If there are no tests in the check, warn
 	}
 
