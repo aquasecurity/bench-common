@@ -302,6 +302,20 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (bool, s
 		s := splitAndRemoveLastSeparator(flagVal, defaultArraySeparator)
 		target := splitAndRemoveLastSeparator(tCompareValue, defaultArraySeparator)
 		testResult = allElementsValid(s, target)
+
+	case "bitmask":
+		expectedResultPattern = "bitmask '%s' AND '%s'"
+		requested, err := strconv.ParseInt(flagVal, 8, 64)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Not numeric value - flag: %q - compareValue: %q %v\n", flagVal, tCompareValue, err)
+			os.Exit(1)
+		}
+		max, err := strconv.ParseInt(tCompareValue, 8, 64)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Not numeric value - flag: %q - compareValue: %q %v\n", flagVal, tCompareValue, err)
+			os.Exit(1)
+		}
+		testResult = (max & requested) == requested
 	default:
 		return testResult, expectedResultPattern, nil
 	}
