@@ -41,7 +41,8 @@ func (audit Audit) Execute(customConfig ...interface{}) (result string, errMessa
 	res, err := exec.Command("sh", "-c", string(audit)).CombinedOutput()
 	// Errors mean the audit command failed, but that might be what we expect
 	// for example, if we grep for something that is not found, there is a non-zero exit code
-	// But it is a problem if we can't find one of the audit commands to execute
+	// It is a problem if we can't find one of the audit commands to execute, but we deal 
+	// with this case in (c *Check) Run() 
 	if err != nil {
 		errMessage = err.Error()
 	}
