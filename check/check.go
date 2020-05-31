@@ -129,7 +129,7 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 		return
 	}
 
-	//If check type is manual or the check is not scored, force result to WARN
+	//If check type is manual, force result to WARN
 	if c.Type == "manual" {
 		c.Reason = "Test marked as a manual test"
 		c.State = WARN
@@ -193,8 +193,10 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 
 		if finalOutput.TestResult {
 			c.State = PASS
-		} else {
+		} else if c.Scored == true {
 			c.State = FAIL
+		} else {
+			c.State = WARN
 		}
 	} else {
 		c.State = WARN
