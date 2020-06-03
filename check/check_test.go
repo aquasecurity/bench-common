@@ -20,6 +20,22 @@ test_items:
 - flag: "root"
   set: true
 `
+const def2 = `---
+id: 1.1
+text: "This is a test test (Scored)"
+sub_checks:
+- check:
+    audit: "anything"
+    tests:
+      test_items:
+      - flag: ""
+        compare:
+          op: eq
+          value: ""
+        set: true			  
+    remediation: "It should pass :) "
+    scored: true
+`
 
 func TestCheck_Run(t *testing.T) {
 	type TestCase struct {
@@ -31,7 +47,12 @@ func TestCheck_Run(t *testing.T) {
 	if err := yaml.Unmarshal([]byte(def1), ts); err != nil {
 		t.Fatalf("error unmarshaling tests yaml %v", err)
 	}
-
+	
+	checkSubChecks := new(Check)
+	if err := yaml.Unmarshal([]byte(def2), checkSubChecks); err != nil {
+		t.Fatalf("error unmarshaling check yaml %v", err)
+	}
+	
 	checkTypeManual := Check{Type: "manual", Tests: ts, Scored: true, auditer: Audit("ps -ef")}
 	checkTypeSkip := Check{Type: "skip", Tests: ts, Scored: true, auditer: Audit("ps -ef")}
 	checkNoTests := Check{Type: "", Scored: true, auditer: Audit("")}
@@ -44,6 +65,7 @@ func TestCheck_Run(t *testing.T) {
 		{check: checkNoTests, Expected: WARN}, // If there are no tests in the check, warn
 		{check: checkScoredFail, Expected: FAIL}, // If scored test fails. FAIL
 		{check: checkNotScoredFail, Expected: WARN}, // If not scored test fails, WARN
+		{check: *checkSubChecks, Expected: PASS},
 	}
 
 	for i, testCase := range testCases {
