@@ -307,13 +307,11 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (bool, s
 		expectedResultPattern = "bitmask '%s' AND '%s'"
 		requested, err := strconv.ParseInt(flagVal, 8, 64)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Not numeric value - flag: %q - compareValue: %q %v\n", flagVal, tCompareValue, err)
-			os.Exit(1)
+			return false, "Invalid Number(s) used for bitmask", fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
 		}
 		max, err := strconv.ParseInt(tCompareValue, 8, 64)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Not numeric value - flag: %q - compareValue: %q %v\n", flagVal, tCompareValue, err)
-			os.Exit(1)
+			return false, "Invalid Number(s) used for bitmask", fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
 		}
 		testResult = (max & requested) == requested
 	default:
