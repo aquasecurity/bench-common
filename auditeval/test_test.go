@@ -680,6 +680,12 @@ func TestCompareOp(t *testing.T) {
 		{label: "op=bitmask, 644 AND 211", op: "bitmask", flagVal: "211",
 			compareValue: "644", expectedResultPattern: "bitmask '211' AND '644'",
 			testResult: false},
+		{label: "op=bitmask, ACDC AND 211", op: "bitmask", flagVal: "ACDC",
+			compareValue: "644", expectedResultPattern: "Invalid Number(s) used for bitmask",
+			testResult: false},
+		{label: "op=bitmask, 644 AND Nirvana", op: "bitmask", flagVal: "211",
+			compareValue: "Nirvana", expectedResultPattern: "Invalid Number(s) used for bitmask",
+			testResult: false},
 	}
 
 	for _, c := range cases {
