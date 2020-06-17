@@ -2,6 +2,7 @@ package check
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -77,8 +78,9 @@ func (a ipAuditMock) Execute(customConfig ...interface{}) (result string, errMes
 func TestNewControlsType(t *testing.T) {
 
 	type args struct {
-		in          []byte
-		definitions []string
+		in           []byte
+		definitions  []string
+		SubstituFile string
 	}
 	tests := []struct {
 		name    string
@@ -86,17 +88,17 @@ func TestNewControlsType(t *testing.T) {
 		wantErr bool
 	}{
 		{"fail wrong type",
-			args{[]byte(wrongTypeYaml), []string{}},
+			args{[]byte(wrongTypeYaml), []string{}, ""},
 			true},
 		{"working correctly type",
-			args{[]byte(customTypeYaml), []string{}},
+			args{[]byte(customTypeYaml), []string{}, ""},
 			false},
 	}
 	b := NewBench()
 	b.RegisterAuditType("check_ip", func() interface{} { return &ipAuditMock{} })
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := b.NewControls(tt.args.in, tt.args.definitions)
+			_, err := b.NewControls(tt.args.in, tt.args.definitions, tt.args.SubstituFile)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("bench.NewControls() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -107,7 +109,7 @@ func TestNewControlsType(t *testing.T) {
 
 func TestExtractAllAuditsForDefaultBench(t *testing.T) {
 
-	c, err := NewControls([]byte(def), nil)
+	c, err := NewControls([]byte(def), nil, "")
 	if err != nil {
 		t.Fatalf("could not create control object: %s", err)
 	}
@@ -154,5 +156,26 @@ func TestExtractAllAuditsForDefaultBench(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+func TestMultiWordReplace(t *testing.T) {
+	cases := []struct {
+		input   string
+		sub     string
+		subname string
+		output  string
+	}{
+		{input: "Here's a file with no substitutions", sub: "blah", subname: "blah", output: "Here's a file with no substitutions"},
+		{input: "Here's a file with a substitution", sub: "blah", subname: "substitution", output: "Here's a file with a blah"},
+		{input: "Here's a file with multi-word substitutions", sub: "multi word", subname: "multi-word", output: "Here's a file with 'multi word' substitutions"},
+		{input: "Here's a file with several several substitutions several", sub: "blah", subname: "several", output: "Here's a file with blah blah substitutions blah"},
+	}
+	for id, c := range cases {
+		t.Run(strconv.Itoa(id), func(t *testing.T) {
+			s := multiWordReplace(c.input, c.subname, c.sub)
+			if s != c.output {
+				t.Fatalf("Expected %s got %s", c.output, s)
+			}
+		})
 	}
 }

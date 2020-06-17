@@ -23,7 +23,7 @@ func app(cmd *cobra.Command, args []string) {
 
 // Main entry point for benchmark functionality
 func Main(filePath string, constraints []string) {
-	controls, err := getControls(filePath, constraints)
+	controls, err := getControls(filePath, constraints, substitutionFile)
 	if err != nil {
 		util.ExitWithError(err)
 	}
@@ -68,13 +68,13 @@ func runControls(controls *check.Controls, checkList string) check.Summary {
 	return summary
 }
 
-func getControls(path string, constraints []string) (*check.Controls, error) {
+func getControls(path string, constraints []string, substitutionFile string) (*check.Controls, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	controls, err := check.NewControls([]byte(data), constraints)
+	controls, err := check.NewControls([]byte(data), constraints, substitutionFile)
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +85,8 @@ func getControls(path string, constraints []string) (*check.Controls, error) {
 func checkDefinitionFilePath(filePath string) (err error) {
 	glog.V(2).Info(fmt.Sprintf("Looking for config file: %s\n", filePath))
 	_, err = os.Stat(filePath)
-
+	if err != nil {
+		glog.V(2).Info(fmt.Sprintf("config file: %s not found.\n", filePath))
+	}
 	return err
 }

@@ -47,23 +47,23 @@ func TestCheck_Run(t *testing.T) {
 	if err := yaml.Unmarshal([]byte(def1), ts); err != nil {
 		t.Fatalf("error unmarshaling tests yaml %v", err)
 	}
-	
+
 	checkSubChecks := new(Check)
 	if err := yaml.Unmarshal([]byte(def2), checkSubChecks); err != nil {
 		t.Fatalf("error unmarshaling check yaml %v", err)
 	}
-	
+
 	checkTypeManual := Check{Type: "manual", Tests: ts, Scored: true, auditer: Audit("ps -ef")}
 	checkTypeSkip := Check{Type: "skip", Tests: ts, Scored: true, auditer: Audit("ps -ef")}
 	checkNoTests := Check{Type: "", Scored: true, auditer: Audit("")}
 	checkScoredFail := Check{Scored: true, Tests: ts, auditer: Audit("echo anything")}
 	checkNotScoredFail := Check{Scored: false, Tests: ts, auditer: Audit("echo anything")}
-	
+
 	testCases := []TestCase{
 		{check: checkTypeManual, Expected: WARN},
 		{check: checkTypeSkip, Expected: INFO},
-		{check: checkNoTests, Expected: WARN}, // If there are no tests in the check, warn
-		{check: checkScoredFail, Expected: FAIL}, // If scored test fails. FAIL
+		{check: checkNoTests, Expected: WARN},       // If there are no tests in the check, warn
+		{check: checkScoredFail, Expected: FAIL},    // If scored test fails. FAIL
 		{check: checkNotScoredFail, Expected: WARN}, // If not scored test fails, WARN
 		{check: *checkSubChecks, Expected: PASS},
 	}
