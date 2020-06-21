@@ -80,7 +80,6 @@ func TestNewControlsType(t *testing.T) {
 	type args struct {
 		in           []byte
 		definitions  []string
-		SubstituFile string
 	}
 	tests := []struct {
 		name    string
@@ -88,17 +87,17 @@ func TestNewControlsType(t *testing.T) {
 		wantErr bool
 	}{
 		{"fail wrong type",
-			args{[]byte(wrongTypeYaml), []string{}, ""},
+			args{[]byte(wrongTypeYaml), []string{}},
 			true},
 		{"working correctly type",
-			args{[]byte(customTypeYaml), []string{}, ""},
+			args{[]byte(customTypeYaml), []string{}},
 			false},
 	}
 	b := NewBench()
 	b.RegisterAuditType("check_ip", func() interface{} { return &ipAuditMock{} })
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := b.NewControls(tt.args.in, tt.args.definitions, tt.args.SubstituFile)
+			_, err := b.NewControls(tt.args.in, tt.args.definitions)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("bench.NewControls() error = %v, wantErr %v", err, tt.wantErr)
 				return
