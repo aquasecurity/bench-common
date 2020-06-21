@@ -71,3 +71,43 @@ func TestMultiWordReplace(t *testing.T) {
 		})
 	}
 }
+
+func TestMakeSubsitutions(t *testing.T) {
+	cases := []struct {
+		input string
+		subst map[string]string
+		exp   string
+	}{
+		{input: "Replace $thisbin", subst: map[string]string{"this": "that"}, exp: "Replace that"},
+		{input: "Replace $thisbin", subst: map[string]string{"this": "that", "here": "there"}, exp: "Replace that"},
+		{input: "Replace $thisbin and $herebin", subst: map[string]string{"this": "that", "here": "there"}, exp: "Replace that and there"},
+	}
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			s := MakeSubstitutions(c.input, "bin", c.subst)
+			if s != c.exp {
+				t.Fatalf("Got %s expected %s", s, c.exp)
+			}
+		})
+	}
+}
+
+func TestGetSubstitutionMap(t *testing.T) {
+	tests := []struct {
+		name         string
+		substituData []byte
+		want         map[string]string
+	}{
+		{
+			name:         "Test for creating valid map",
+			substituData: []byte(subs),
+			want:         map[string]string{"docker-storage": "/var/lib/docker", "example": "/exmaple/change"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetSubstitutionMap(tt.substituData); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetSubstitutionMap() = %v, want %v", got, tt.want)
+			}
+		})
+	}
