@@ -151,6 +151,15 @@ func verifyBin(bin string, psFunc func(string) string) bool {
 	return strings.Contains(out, bin)
 }
 
+func multiWordReplace(s string, subname string, sub string) string {
+	f := strings.Fields(sub)
+	if len(f) > 1 {
+		sub = "'" + sub + "'"
+	}
+
+	return strings.Replace(s, subname, sub, -1)
+}
+
 func printRawOutput(output string) {
 	for _, row := range strings.Split(output, "\n") {
 		fmt.Println(fmt.Sprintf("\t %s", row))
@@ -217,12 +226,4 @@ func MakeSubstitutions(s string, ext string, m map[string]string) string {
 	}
 
 	return s
-}
-func multiWordReplace(s string, subname string, sub string) string {
-	f := strings.Fields(sub)
-	if len(f) > 1 {
-		sub = "'" + sub + "'"
-	}
-
-	return strings.Replace(s, subname, sub, -1)
 }
