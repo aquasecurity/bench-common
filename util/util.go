@@ -37,6 +37,11 @@ var (
 	}
 )
 
+// SubstitutionList is a Config file for substitution
+type SubstitutionList struct {
+	Name string `yaml:"value"`
+}
+
 func printlnWarn(msg string) {
 	fmt.Fprintf(os.Stderr, "[%s] %s\n",
 		colors[check.WARN].Sprintf("%s", check.WARN),
@@ -189,11 +194,6 @@ func PrintOutput(output string, outputFile string) {
 			continueWithError(err, sprintlnWarn(s))
 		}
 	}
-}
-
-// SubstitutionList is a Config file for substitution
-type SubstitutionList struct {
-	Name string `yaml:"value"`
 }
 
 // getSubstitutionMap is building the key:value map
