@@ -76,7 +76,6 @@ func getControls(path string, constraints []string, substitutionFile string) (*c
 		return nil, err
 	}
 	substituMap := util.GetSubstitutionMap(substitutionFile)
-	fmt.Printf("map: %v", substituMap)
 	s := string(data)
 	s = util.MakeSubstitutions(s, "", substituMap)
 	controls, err := check.NewControls([]byte(s), constraints)
