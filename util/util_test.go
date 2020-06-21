@@ -15,11 +15,22 @@
 package util
 
 import (
+	"reflect"
 	"strconv"
 	"testing"
 )
 
 var g string
+
+const subs = `---
+## Controls Files.
+# These are YAML files that hold all the details for running checks.
+# In here you can set all parameter substitution for docker-bench
+
+docker-storage:
+  value: /var/lib/docker
+example:
+  value: /exmaple/change`
 
 func fakeps(proc string) string {
 	return g
@@ -111,4 +122,4 @@ func TestGetSubstitutionMap(t *testing.T) {
 			}
 		})
 	}
-	
+}
