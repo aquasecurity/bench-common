@@ -195,7 +195,7 @@ func PrintOutput(output string, outputFile string) {
 	}
 }
 
-// getSubstitutionMap is building the key:value map
+// GetSubstitutionMap is building the key:value map
 func GetSubstitutionMap(substituData []byte) map[string]string {
 	//var yamlConfig Item
 	fileMap := make(map[string]SubstitutionList)
