@@ -197,15 +197,11 @@ type SubstitutionList struct {
 }
 
 // getSubstitutionMap is building the key:value map
-func GetSubstitutionMap(filePath string) map[string]string {
+func GetSubstitutionMap(substituData []byte) map[string]string {
 	//var yamlConfig Item
 	fileMap := make(map[string]SubstitutionList)
 	outputMap := make(map[string]string)
-	yamlFile, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		fmt.Errorf("failed to read file: %s", filePath)
-	}
-	err = yaml.Unmarshal(yamlFile, &fileMap)
+	err := yaml.Unmarshal(substituData, &fileMap)
 	if err != nil {
 		fmt.Errorf("failed to unmarshal YAML: %s", err)
 	}
@@ -214,6 +210,7 @@ func GetSubstitutionMap(filePath string) map[string]string {
 	}
 	return outputMap
 }
+
 func MakeSubstitutions(s string, ext string, m map[string]string) string {
 	for k, v := range m {
 		subst := "$" + k + ext
