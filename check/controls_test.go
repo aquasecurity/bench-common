@@ -77,7 +77,7 @@ groups:
 var definedTestConstraints = []string{"platform=ubuntu", "platform=rhel", "boot=grub"}
 
 func TestRunGroup(t *testing.T) {
-	c, err := NewControls([]byte(def), definedTestConstraints, "")
+	c, err := NewControls([]byte(def), definedTestConstraints)
 	if err != nil {
 		t.Fatalf("could not create control object: %s", err)
 	}
@@ -87,7 +87,7 @@ func TestRunGroup(t *testing.T) {
 
 // TODO: make this test useful as of now it never fails.
 func TestRunChecks(t *testing.T) {
-	c, err := NewControls([]byte(def), definedTestConstraints, "")
+	c, err := NewControls([]byte(def), definedTestConstraints)
 	if err != nil {
 		t.Fatalf("could not create control object: %s", err)
 	}
