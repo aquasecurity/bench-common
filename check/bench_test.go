@@ -2,7 +2,6 @@ package check
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 )
 
@@ -157,4 +156,3 @@ func TestExtractAllAuditsForDefaultBench(t *testing.T) {
 		}
 	}
 }
-
