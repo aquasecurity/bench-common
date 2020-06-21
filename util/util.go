@@ -211,6 +211,7 @@ func GetSubstitutionMap(substituData []byte) map[string]string {
 	return outputMap
 }
 
+// MakeSubstitutions will replace all $keys with values.
 func MakeSubstitutions(s string, ext string, m map[string]string) string {
 	for k, v := range m {
 		subst := "$" + k + ext
