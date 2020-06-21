@@ -19,11 +19,9 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/golang/glog"
 	"github.com/onsi/ginkgo/reporters"
-	"gopkg.in/yaml.v2"
 )
 
 // Auditer represents the Execute method to be called.
@@ -39,7 +37,6 @@ type Controls struct {
 	Summary
 	DefinedConstraints map[string][]string
 	customConfigs      []interface{}
-	SubstituStrings    map[string]SubstitutionList
 }
 
 // Summary is a summary of the results of control checks run.
@@ -50,15 +47,10 @@ type Summary struct {
 	Info int `json:"total_info"`
 }
 
-// SubstitutionList is a Config file for substitution
-type SubstitutionList struct {
-	Name string `yaml:"value"`
-}
-
 var defaultBench bench // for backward compatibility
 // NewControls instantiates a new master Controls object.
-func NewControls(in []byte, definitions []string, filePath string) (*Controls, error) {
-	return defaultBench.NewControls(in, definitions, filePath)
+func NewControls(in []byte, definitions []string) (*Controls, error) {
+	return defaultBench.NewControls(in, definitions)
 }
 
 // RunGroup runs all checks in a group.
@@ -156,19 +148,6 @@ func (controls *Controls) getAllCheckIDs() []string {
 	}
 	return ids
 
-}
-func (controls *Controls) getSubstitutionMap(filePath string) {
-	//var yamlConfig Item
-	fileMap := make(map[string]SubstitutionList)
-	yamlFile, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		fmt.Errorf("failed to read file: %s", filePath)
-	}
-	err = yaml.Unmarshal(yamlFile, &fileMap)
-	if err != nil {
-		fmt.Errorf("failed to unmarshal YAML: %s", err)
-	}
-	controls.SubstituStrings = fileMap
 }
 
 // JSON encodes the results of last run to JSON.

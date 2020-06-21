@@ -25,7 +25,7 @@ import (
 // Bench implementer of this interface represent audit types to be tests.
 type Bench interface {
 	RegisterAuditType(auditType AuditType, typeCallback func() interface{}) error
-	NewControls(in []byte, definitions []string, filePath string, customConfigs ...interface{}) (*Controls, error)
+	NewControls(in []byte, definitions []string, customConfigs ...interface{}) (*Controls, error)
 }
 
 type bench struct {
@@ -51,13 +51,13 @@ func (b *bench) RegisterAuditType(auditType AuditType, typeCallback func() inter
 
 }
 
-func (b *bench) NewControls(in []byte, definitions []string, SubstitufilePath string, customConfigs ...interface{}) (*Controls, error) {
+func (b *bench) NewControls(in []byte, definitions []string, customConfigs ...interface{}) (*Controls, error) {
 	c := new(Controls)
 	err := yaml.Unmarshal(in, c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal YAML: %s", err)
 	}
-	c.getSubstitutionMap(SubstitufilePath)
+	//c.getSubstitutionMap(SubstitufilePath)
 	c.customConfigs = customConfigs
 	if len(definitions) > 0 {
 		c.DefinedConstraints = map[string][]string{}
@@ -78,33 +78,6 @@ func (b *bench) NewControls(in []byte, definitions []string, SubstitufilePath st
 	return c, nil
 }
 
-func multiWordReplace(s string, subname string, sub string) string {
-	f := strings.Fields(sub)
-	if len(f) > 1 {
-		sub = "'" + sub + "'"
-	}
-
-	return strings.Replace(s, subname, sub, -1)
-}
-
-func makeSubstitutions(s string, substMap map[string]SubstitutionList) Audit {
-	for k, v := range substMap {
-		subst := "$" + k
-		if v.Name == "" {
-			glog.V(2).Info(fmt.Sprintf("No substitution for '%s'\n", subst))
-			continue
-		}
-		glog.V(2).Info(fmt.Sprintf("Substituting %s with '%s'\n", subst, v))
-		s = multiWordReplace(s, subst, v.Name)
-	}
-	return Audit(s)
-}
-func (b *bench) checkForSubstitution(audit interface{}, subst map[string]SubstitutionList) (auditer Auditer) {
-	if strings.Contains(audit.(string), "$") {
-		return Audit(makeSubstitutions(audit.(string), subst))
-	}
-	return Audit(audit.(string))
-}
 func (b *bench) convertAuditToRegisteredType(auditType AuditType, audit interface{}) (auditer Auditer, err error) {
 
 	var auditBytes []byte
@@ -141,7 +114,7 @@ func (b *bench) extractAllAudits(controls *Controls) (err error) {
 				if audit, err = b.convertAuditToRegisteredType(check.AuditType, check.Audit); err != nil {
 					return err
 				}
-				check.auditer = b.checkForSubstitution(check.Audit, controls.SubstituStrings)
+				check.auditer = audit
 				check.customConfigs = controls.customConfigs
 			} else {
 				for _, subCheck := range check.SubChecks {

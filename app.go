@@ -13,8 +13,10 @@ import (
 )
 
 func app(cmd *cobra.Command, args []string) {
-	err := checkDefinitionFilePath(cfgFile)
+	glog.V(2).Info(fmt.Sprintf("Looking for config file: %s\n", cfgFile))
+	_, err := os.Stat(cfgFile)
 	if err != nil {
+		glog.V(2).Info(fmt.Sprintf("config file: %s not found.\n", cfgFile))
 		util.ExitWithError(err)
 	}
 
@@ -73,20 +75,14 @@ func getControls(path string, constraints []string, substitutionFile string) (*c
 	if err != nil {
 		return nil, err
 	}
-
-	controls, err := check.NewControls([]byte(data), constraints, substitutionFile)
+	substituMap := util.GetSubstitutionMap(substitutionFile)
+	fmt.Printf("map: %v", substituMap)
+	s := string(data)
+	s = util.MakeSubstitutions(s, "", substituMap)
+	controls, err := check.NewControls([]byte(s), constraints)
 	if err != nil {
 		return nil, err
 	}
 
 	return controls, err
-}
-
-func checkDefinitionFilePath(filePath string) (err error) {
-	glog.V(2).Info(fmt.Sprintf("Looking for config file: %s\n", filePath))
-	_, err = os.Stat(filePath)
-	if err != nil {
-		glog.V(2).Info(fmt.Sprintf("config file: %s not found.\n", filePath))
-	}
-	return err
 }

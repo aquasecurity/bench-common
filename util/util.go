@@ -17,12 +17,14 @@ package util
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/aquasecurity/bench-common/check"
 	"github.com/fatih/color"
 	"github.com/golang/glog"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -178,4 +180,49 @@ func PrintOutput(output string, outputFile string) {
 			continueWithError(err, sprintlnWarn(s))
 		}
 	}
+}
+
+// SubstitutionList is a Config file for substitution
+type SubstitutionList struct {
+	Name string `yaml:"value"`
+}
+
+// getSubstitutionMap is building the key:value map
+func GetSubstitutionMap(filePath string) map[string]string {
+	//var yamlConfig Item
+	fileMap := make(map[string]SubstitutionList)
+	outputMap := make(map[string]string)
+	yamlFile, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		fmt.Errorf("failed to read file: %s", filePath)
+	}
+	err = yaml.Unmarshal(yamlFile, &fileMap)
+	if err != nil {
+		fmt.Errorf("failed to unmarshal YAML: %s", err)
+	}
+	for k, v := range fileMap {
+		outputMap[k] = v.Name
+	}
+	return outputMap
+}
+func MakeSubstitutions(s string, ext string, m map[string]string) string {
+	for k, v := range m {
+		subst := "$" + k + ext
+		if v == "" {
+			glog.V(2).Info(fmt.Sprintf("No substitution for '%s'\n", subst))
+			continue
+		}
+		glog.V(2).Info(fmt.Sprintf("Substituting %s with '%s'\n", subst, v))
+		s = multiWordReplace(s, subst, v)
+	}
+
+	return s
+}
+func multiWordReplace(s string, subname string, sub string) string {
+	f := strings.Fields(sub)
+	if len(f) > 1 {
+		sub = "'" + sub + "'"
+	}
+
+	return strings.Replace(s, subname, sub, -1)
 }
