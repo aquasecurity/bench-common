@@ -57,7 +57,6 @@ func (b *bench) NewControls(in []byte, definitions []string, customConfigs ...in
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal YAML: %s", err)
 	}
-	//c.getSubstitutionMap(SubstitufilePath)
 	c.customConfigs = customConfigs
 	if len(definitions) > 0 {
 		c.DefinedConstraints = map[string][]string{}
