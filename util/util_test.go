@@ -112,7 +112,7 @@ func TestGetSubstitutionMap(t *testing.T) {
 		{
 			name:         "Test for creating valid map",
 			substituData: []byte(subs),
-			want:         map[string]string{"docker-storage": "/var/lib/docker", "example": "/exmaple/change"},
+			want:         map[string]string{"docker-storage": "/var/lib/docker", "example": "/example/change"},
 		},
 	}
 	for _, tt := range tests {
