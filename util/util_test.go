@@ -30,7 +30,7 @@ const subs = `---
 docker-storage:
   value: /var/lib/docker
 example:
-  value: /exmaple/change`
+  value: /example/change`
 
 func fakeps(proc string) string {
 	return g
