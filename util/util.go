@@ -55,18 +55,6 @@ func ExitWithError(err error) {
 	os.Exit(1)
 }
 
-func continueWithError(err error, msg string) string {
-	if err != nil {
-		glog.V(1).Info(err)
-	}
-
-	if msg != "" {
-		fmt.Fprintf(os.Stderr, "%s\n", msg)
-	}
-
-	return ""
-}
-
 // CleanIDs cleans ids from provided list
 func CleanIDs(list string) []string {
 	list = strings.Trim(list, ",")
@@ -184,7 +172,8 @@ func PrintOutput(output string, outputFile string) {
 		err := writeOutputToFile(output, outputFile)
 		if err != nil {
 			s := fmt.Sprintf("Failed to write to output file %s", outputFile)
-			continueWithError(err, sprintlnWarn(s))
+			glog.V(1).Info(err)
+			fmt.Fprintf(os.Stderr, "%s\n", s)
 		}
 	}
 }
