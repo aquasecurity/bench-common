@@ -17,6 +17,7 @@ var (
 	includeTestOutput bool
 	outputFile        string
 	define            []string
+	substitutionFile  string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -48,6 +49,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.app.yaml)")
+	rootCmd.PersistentFlags().StringVar(&substitutionFile, "substitution", "", "parameters substitution file")
 	rootCmd.PersistentFlags().StringArrayVar(&define, "define", []string{""}, "")
 
 	// Cobra also supports local flags, which will only run

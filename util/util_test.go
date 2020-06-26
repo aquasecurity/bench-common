@@ -15,11 +15,22 @@
 package util
 
 import (
+	"reflect"
 	"strconv"
 	"testing"
 )
 
 var g string
+
+const subs = `---
+## Controls Files.
+# These are YAML files that hold all the details for running checks.
+# In here you can set all parameter substitution for docker-bench
+
+docker-storage:
+  value: /var/lib/docker
+example:
+  value: /example/change`
 
 func fakeps(proc string) string {
 	return g
@@ -67,6 +78,47 @@ func TestMultiWordReplace(t *testing.T) {
 			s := multiWordReplace(c.input, c.subname, c.sub)
 			if s != c.output {
 				t.Fatalf("Expected %s got %s", c.output, s)
+			}
+		})
+	}
+}
+
+func TestMakeSubsitutions(t *testing.T) {
+	cases := []struct {
+		input string
+		subst map[string]string
+		exp   string
+	}{
+		{input: "Replace $thisbin", subst: map[string]string{"this": "that"}, exp: "Replace that"},
+		{input: "Replace $thisbin", subst: map[string]string{"this": "that", "here": "there"}, exp: "Replace that"},
+		{input: "Replace $thisbin and $herebin", subst: map[string]string{"this": "that", "here": "there"}, exp: "Replace that and there"},
+	}
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			s := MakeSubstitutions(c.input, "bin", c.subst)
+			if s != c.exp {
+				t.Fatalf("Got %s expected %s", s, c.exp)
+			}
+		})
+	}
+}
+
+func TestGetSubstitutionMap(t *testing.T) {
+	tests := []struct {
+		name         string
+		substituData []byte
+		want         map[string]string
+	}{
+		{
+			name:         "Test for creating valid map",
+			substituData: []byte(subs),
+			want:         map[string]string{"docker-storage": "/var/lib/docker", "example": "/example/change"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetSubstitutionMap(tt.substituData); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetSubstitutionMap() = %v, want %v", got, tt.want)
 			}
 		})
 	}

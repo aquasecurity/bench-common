@@ -18,9 +18,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
-	"github.com/onsi/ginkgo/reporters"
 	"strings"
 	"testing"
+
+	"github.com/onsi/ginkgo/reporters"
 )
 
 const def = `---

@@ -23,6 +23,7 @@ import (
 	"github.com/aquasecurity/bench-common/check"
 	"github.com/fatih/color"
 	"github.com/golang/glog"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -34,6 +35,11 @@ var (
 		check.INFO: color.New(color.FgBlue),
 	}
 )
+
+// SubstitutionList is a Config file for substitution
+type SubstitutionList struct {
+	Name string `yaml:"value"`
+}
 
 func printlnWarn(msg string) {
 	fmt.Fprintf(os.Stderr, "[%s] %s\n",
@@ -176,4 +182,34 @@ func PrintOutput(output string, outputFile string) {
 			fmt.Fprintf(os.Stderr, "%s\n", s)
 		}
 	}
+}
+
+// GetSubstitutionMap is building the key:value map
+func GetSubstitutionMap(substituData []byte) map[string]string {
+	//var yamlConfig Item
+	fileMap := make(map[string]SubstitutionList)
+	outputMap := make(map[string]string)
+	err := yaml.Unmarshal(substituData, &fileMap)
+	if err != nil {
+		fmt.Errorf("failed to unmarshal YAML: %s", err)
+	}
+	for k, v := range fileMap {
+		outputMap[k] = v.Name
+	}
+	return outputMap
+}
+
+// MakeSubstitutions will replace all $keys with values.
+func MakeSubstitutions(s string, ext string, m map[string]string) string {
+	for k, v := range m {
+		subst := "$" + k + ext
+		if v == "" {
+			glog.V(2).Info(fmt.Sprintf("No substitution for '%s'\n", subst))
+			continue
+		}
+		glog.V(2).Info(fmt.Sprintf("Substituting %s with '%s'\n", subst, v))
+		s = multiWordReplace(s, subst, v)
+	}
+
+	return s
 }

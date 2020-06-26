@@ -41,8 +41,8 @@ func (audit Audit) Execute(customConfig ...interface{}) (result string, errMessa
 	res, err := exec.Command("sh", "-c", string(audit)).CombinedOutput()
 	// Errors mean the audit command failed, but that might be what we expect
 	// for example, if we grep for something that is not found, there is a non-zero exit code
-	// It is a problem if we can't find one of the audit commands to execute, but we deal 
-	// with this case in (c *Check) Run() 
+	// It is a problem if we can't find one of the audit commands to execute, but we deal
+	// with this case in (c *Check) Run()
 	if err != nil {
 		errMessage = err.Error()
 	}
@@ -139,7 +139,7 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 	// Since this is an Scored check
 	// without tests return a 'WARN' to alert
 	// the user that this check needs attention
-	if len(strings.TrimSpace(c.Type)) == 0 && c.Tests == nil && c.SubChecks == nil{
+	if len(strings.TrimSpace(c.Type)) == 0 && c.Tests == nil && c.SubChecks == nil {
 		c.Reason = "There are no test items"
 		c.State = WARN
 		return
