@@ -66,6 +66,17 @@ func (controls *Controls) RunGroup(gids ...string) Summary {
 		for _, gid := range gids {
 			if gid == group.ID {
 				for _, check := range group.Checks {
+					// Check if group has constraints
+					if group.Constraints != nil {
+						groupConstraintsOk := true
+						for testConstraintKey, testConstraintVals := range group.Constraints {
+							groupConstraintsOk = isSubCheckCompatible(testConstraintKey, testConstraintVals, controls.DefinedConstraints)
+							// If group constraints is not applied then skip test.
+							if !groupConstraintsOk {
+								check.Type = "skip"
+							}
+						}
+					}
 					check.Run(controls.DefinedConstraints)
 					check.TestInfo = append(check.TestInfo, check.Remediation)
 					summarize(controls, check)
