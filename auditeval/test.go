@@ -42,7 +42,7 @@ type testItem struct {
 	Path    string
 	Output  string
 	Value   string
-	Set     bool
+	Set     string
 	Compare compare
 }
 
@@ -211,8 +211,8 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 		match = (jsonpathResult != "")
 		flagVal = jsonpathResult
 	}
-
-	if t.Set {
+	fmt.Printf("t.Set is %v\n", t)
+	if t.Set != "false" {
 		if t.Compare.Op != "" {
 			if !match {
 				flagVal = getFlagValue(output, t.Flag)
