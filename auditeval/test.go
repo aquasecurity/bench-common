@@ -42,7 +42,7 @@ type testItem struct {
 	Path    string
 	Output  string
 	Value   string
-	Set     string
+	Set     bool
 	Compare compare
 }
 
@@ -211,8 +211,8 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 		match = (jsonpathResult != "")
 		flagVal = jsonpathResult
 	}
-	fmt.Printf("t.Set is %v\n", t)
-	if t.Set != "false" {
+	
+	if t.Set {
 		if t.Compare.Op != "" {
 			if !match {
 				flagVal = getFlagValue(output, t.Flag)
@@ -394,4 +394,17 @@ func executeJSONPath(path string, jsonInterface interface{}) (string, error) {
 	}
 
 	return buf.String(), nil
+}
+
+func (t *testItem) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type buildTest testItem
+
+	// Make Set parameter to be treu by default.
+	newTestItem := buildTest{Set: true}
+	err := unmarshal(&newTestItem)
+	if err != nil {
+		return err
+	}
+	*t = testItem(newTestItem)
+	return nil
 }
