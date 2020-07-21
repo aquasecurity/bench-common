@@ -211,7 +211,6 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 		match = (jsonpathResult != "")
 		flagVal = jsonpathResult
 	}
-	
 	if t.Set {
 		if t.Compare.Op != "" {
 			if !match {
