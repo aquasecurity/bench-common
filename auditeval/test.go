@@ -211,7 +211,6 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 		match = (jsonpathResult != "")
 		flagVal = jsonpathResult
 	}
-
 	if t.Set {
 		if t.Compare.Op != "" {
 			if !match {
@@ -394,4 +393,17 @@ func executeJSONPath(path string, jsonInterface interface{}) (string, error) {
 	}
 
 	return buf.String(), nil
+}
+
+func (t *testItem) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type buildTest testItem
+
+	// Make Set parameter to be treu by default.
+	newTestItem := buildTest{Set: true}
+	err := unmarshal(&newTestItem)
+	if err != nil {
+		return err
+	}
+	*t = testItem(newTestItem)
+	return nil
 }
