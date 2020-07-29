@@ -124,7 +124,7 @@ func TestGetSubstitutionMap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got, err := GetSubstitutionMap(tt.substituData); !reflect.DeepEqual(got, tt.want) {
-				if err != nil && tt.expectedErr != true {
+				if err != nil && !tt.expectedErr {
 					t.Errorf("%v Error: %v", tt.name, err)
 				}
 				t.Errorf("GetSubstitutionMap() - %v = %v, want %v", tt.name, got, tt.want)
