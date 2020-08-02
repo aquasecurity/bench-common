@@ -108,17 +108,26 @@ func TestGetSubstitutionMap(t *testing.T) {
 		name         string
 		substituData []byte
 		want         map[string]string
+		expectedErr  bool
 	}{
 		{
 			name:         "Test for creating valid map",
 			substituData: []byte(subs),
 			want:         map[string]string{"docker-storage": "/var/lib/docker", "example": "/example/change"},
 		},
+		{
+			name:         "Test for creating map from invalid file",
+			substituData: []byte("GibrishNotYaml"),
+			expectedErr:  true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetSubstitutionMap(tt.substituData); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetSubstitutionMap() = %v, want %v", got, tt.want)
+			if got, err := GetSubstitutionMap(tt.substituData); !reflect.DeepEqual(got, tt.want) {
+				if err != nil && !tt.expectedErr {
+					t.Errorf("%v Error: %v", tt.name, err)
+				}
+				t.Errorf("GetSubstitutionMap() - %v = %v, want %v", tt.name, got, tt.want)
 			}
 		})
 	}

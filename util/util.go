@@ -185,18 +185,19 @@ func PrintOutput(output string, outputFile string) {
 }
 
 // GetSubstitutionMap is building the key:value map
-func GetSubstitutionMap(substituData []byte) map[string]string {
+func GetSubstitutionMap(substituData []byte) (map[string]string, error) {
 	//var yamlConfig Item
 	fileMap := make(map[string]SubstitutionList)
 	outputMap := make(map[string]string)
 	err := yaml.Unmarshal(substituData, &fileMap)
 	if err != nil {
-		fmt.Errorf("failed to unmarshal YAML: %s", err)
+		glog.V(1).Info(fmt.Sprintf("failed to unmarshal YAML: %s", err))
+		return nil, err
 	}
 	for k, v := range fileMap {
 		outputMap[k] = v.Name
 	}
-	return outputMap
+	return outputMap, nil
 }
 
 // MakeSubstitutions will replace all $keys with values.
