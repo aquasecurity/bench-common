@@ -302,7 +302,7 @@ func TestRunAuditCommands(t *testing.T) {
 			// If the audit command can't be run, we eventually report FAIL but this is done in
 			// (c *Check) Run() based on the final output
 			b: BaseCheck{auditer: Audit("anything")},
-			s: "", err: true, o: "sh: 1: anything: not found",
+			s: "", err: true, o: "/bin/sh: 1: anything: not found",
 		}, {
 			// 3
 			b: BaseCheck{auditer: Audit("echo hello")},
@@ -324,7 +324,7 @@ func TestRunAuditCommands(t *testing.T) {
 			// Like in test #2 the final state will be fail, but currently in runAuditCommands
 			// is just an empty string
 			b: BaseCheck{auditer: Audit("echo $(ls . | grep 'bench') | anything")},
-			s: "", err: true, o: "sh: 1: anything: not found",
+			s: "", err: true, o: "/bin/sh: 1: anything: not found",
 		},
 	}
 
