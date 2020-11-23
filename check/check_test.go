@@ -219,6 +219,68 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 	}
 }
 
+func Test_runAudit(t *testing.T) {
+	type args struct {
+		audit  string
+		output string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		errMsg string
+		output string
+	}{
+		{
+			name: "run success",
+			args: args{
+				audit: "echo 'hello world'",
+			},
+			errMsg: "",
+			output: "hello world\n",
+		},
+		{
+			name: "run multiple lines script",
+			args: args{
+				audit: `
+hello() {
+  echo "hello world"
+}
+
+hello
+`,
+			},
+			errMsg: "",
+			output: "hello world\n",
+		},
+		{
+			name: "run failed",
+			args: args{
+				audit: "unknown_command",
+			},
+			errMsg: "failed to run: \"unknown_command\", output: \"/bin/sh: ",
+			output: "not found\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var errMsg string
+			output, err := runAudit(tt.args.audit)
+			if err != nil {
+				errMsg = err.Error()
+			}
+			if errMsg != "" && !strings.Contains(errMsg, tt.errMsg) {
+				t.Errorf("name %s errMsg = %q, want %q", tt.name, errMsg, tt.errMsg)
+			}
+			if errMsg == "" && output != tt.output {
+				t.Errorf("name %s output = %q, want %q", tt.name, output, tt.output)
+			}
+			if errMsg != "" && !strings.Contains(output, tt.output) {
+				t.Errorf("name %s output = %q, want %q", tt.name, output, tt.output)
+			}
+		})
+	}
+}
+
 func TestRunAuditCommands(t *testing.T) {
 
 	cases := []struct {
@@ -240,7 +302,7 @@ func TestRunAuditCommands(t *testing.T) {
 			// If the audit command can't be run, we eventually report FAIL but this is done in
 			// (c *Check) Run() based on the final output
 			b: BaseCheck{auditer: Audit("anything")},
-			s: "", err: true, o: "sh: 1: anything: not found",
+			s: "", err: true, o: "/bin/sh: 1: anything: not found",
 		}, {
 			// 3
 			b: BaseCheck{auditer: Audit("echo hello")},
@@ -262,7 +324,7 @@ func TestRunAuditCommands(t *testing.T) {
 			// Like in test #2 the final state will be fail, but currently in runAuditCommands
 			// is just an empty string
 			b: BaseCheck{auditer: Audit("echo $(ls . | grep 'bench') | anything")},
-			s: "", err: true, o: "sh: 1: anything: not found",
+			s: "", err: true, o: "/bin/sh: 1: anything: not found",
 		},
 	}
 

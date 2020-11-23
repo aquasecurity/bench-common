@@ -15,6 +15,7 @@
 package check
 
 import (
+	"bytes"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -38,7 +39,8 @@ type Audit string
 // Execute method called by the main logic to execute the Audit's Execute type.
 func (audit Audit) Execute(customConfig ...interface{}) (result string, errMessage string, state State) {
 
-	res, err := exec.Command("sh", "-c", string(audit)).CombinedOutput()
+	res, err := runAudit(string(audit))
+
 	// Errors mean the audit command failed, but that might be what we expect
 	// for example, if we grep for something that is not found, there is a non-zero exit code
 	// It is a problem if we can't find one of the audit commands to execute, but we deal
@@ -205,6 +207,30 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 		c.Reason = "Test output contains a nil value"
 		return
 	}
+}
+
+func runAudit(audit string) (output string, err error) {
+	var out bytes.Buffer
+
+	audit = strings.TrimSpace(audit)
+	if len(audit) == 0 {
+		return output, err
+	}
+
+	cmd := exec.Command("/bin/sh")
+	cmd.Stdin = strings.NewReader(audit)
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	err = cmd.Run()
+	output = out.String()
+
+	if err != nil {
+		err = fmt.Errorf("failed to run: %q, output: %q, error: %s", audit, output, err)
+	} else {
+		glog.V(3).Infof("Command %q\n - Output:\n %q", audit, output)
+
+	}
+	return output, err
 }
 
 func runAuditCommands(c BaseCheck) (output, errMessage string, state State) {
