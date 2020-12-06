@@ -60,6 +60,8 @@ const (
 	WARN = "WARN"
 	// INFO informational message
 	INFO = "INFO"
+	// SKIP for when a check should be skipped.
+	SKIP = "skip"
 )
 
 func handleError(err error, context string) (errmsg string) {
@@ -115,6 +117,7 @@ type Group struct {
 	ID          string              `yaml:"id" json:"section"`
 	Description string              `json:"desc"`
 	Constraints map[string][]string `yaml:"constraints"`
+	Type        string              `yaml:"type" json:"type"`
 	Checks      []*Check            `json:"results"`
 	Pass        int                 `json:"pass"` // Tests with no type that passed
 	Fail        int                 `json:"fail"` // Tests with no type that failed
@@ -126,7 +129,7 @@ type Group struct {
 // the results.
 func (c *Check) Run(definedConstraints map[string][]string) {
 	// If check type is skip, force result to INFO
-	if c.Type == "skip" {
+	if c.Type == SKIP {
 		c.Reason = "Test marked as skip"
 		c.State = INFO
 		return
