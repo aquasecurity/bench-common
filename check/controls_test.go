@@ -128,10 +128,10 @@ groups:
 
 `
 const (
-	PASS_INDEX = 0
-	FAIL_INDEX = 1
-	WARN_INDEX = 2
-	INFO_INDEX = 3
+	PASSIndex = 0
+	FAILIndex = 1
+	WARNIndex = 2
+	INFOIndex = 3
 )
 
 var definedTestConstraints = []string{"platform=ubuntu", "platform=rhel", "boot=grub"}
@@ -145,8 +145,8 @@ func TestRunGroup(t *testing.T) {
 	}
 	testCases := []TestCase{
 		{name: "test 1 - skip group", groupIDs: []string{"2.1"}, Expected: [4]int{0, 0, 0, 3}},
-		{name: "test 2 - regular group", groupIDs: []string{"1.1"}, Expected: [4]int{1, 3, 0, 0}},
-		{name: "test 3 - skip and regular group", groupIDs: []string{"1.1", "2.1"}, Expected: [4]int{1, 3, 0, 3}},
+		{name: "test 2 - regular group", groupIDs: []string{"1.1"}, Expected: [4]int{1, 2, 1, 0}},
+		{name: "test 3 - skip and regular group", groupIDs: []string{"1.1", "2.1"}, Expected: [4]int{1, 2, 1, 3}},
 	}
 	for _, test := range testCases {
 
@@ -156,8 +156,8 @@ func TestRunGroup(t *testing.T) {
 		}
 
 		output := c.RunGroup(test.groupIDs...)
-		if !(output.Pass == test.Expected[PASS_INDEX] && output.Fail == test.Expected[FAIL_INDEX] && output.Warn == test.Expected[WARN_INDEX] && output.Info == test.Expected[INFO_INDEX]) {
-			t.Errorf("%s failed\nexpected: PASS[%d] FAIL[%d] WARN[%d] INFO[%d] got:\nPASS[%d] FAIL[%d] WARN[%d] INFO[%d]\n", test.name, test.Expected[PASS_INDEX], test.Expected[FAIL_INDEX], test.Expected[WARN_INDEX], test.Expected[INFO_INDEX], output.Pass, output.Fail, output.Warn, output.Info)
+		if !(output.Pass == test.Expected[PASSIndex] && output.Fail == test.Expected[FAILIndex] && output.Warn == test.Expected[WARNIndex] && output.Info == test.Expected[INFOIndex]) {
+			t.Errorf("%s failed\nexpected: PASS[%d] FAIL[%d] WARN[%d] INFO[%d] got:\nPASS[%d] FAIL[%d] WARN[%d] INFO[%d]\n", test.name, test.Expected[PASSIndex], test.Expected[FAILIndex], test.Expected[WARNIndex], test.Expected[INFOIndex], output.Pass, output.Fail, output.Warn, output.Info)
 		}
 	}
 }
@@ -187,8 +187,8 @@ func TestRunChecks(t *testing.T) {
 		}
 
 		output := c.RunChecks(test.checks...)
-		if !(output.Pass == test.Expected[PASS_INDEX] && output.Fail == test.Expected[FAIL_INDEX] && output.Warn == test.Expected[WARN_INDEX] && output.Info == test.Expected[INFO_INDEX]) {
-			t.Errorf("%s failed\nexpected: PASS[%d] FAIL[%d] WARN[%d] INFO[%d] got:\nPASS[%d] FAIL[%d] WARN[%d] INFO[%d]\n", test.name, test.Expected[PASS_INDEX], test.Expected[FAIL_INDEX], test.Expected[WARN_INDEX], test.Expected[INFO_INDEX], output.Pass, output.Fail, output.Warn, output.Info)
+		if !(output.Pass == test.Expected[PASSIndex] && output.Fail == test.Expected[FAILIndex] && output.Warn == test.Expected[WARNIndex] && output.Info == test.Expected[INFOIndex]) {
+			t.Errorf("%s failed\nexpected: PASS[%d] FAIL[%d] WARN[%d] INFO[%d] got:\nPASS[%d] FAIL[%d] WARN[%d] INFO[%d]\n", test.name, test.Expected[PASSIndex], test.Expected[FAILIndex], test.Expected[WARNIndex], test.Expected[INFOIndex], output.Pass, output.Fail, output.Warn, output.Info)
 		}
 
 	}
