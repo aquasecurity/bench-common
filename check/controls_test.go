@@ -71,28 +71,127 @@ groups:
             value: false
           set: true			  
       remediation: "Make it work"
+      scored: false
+    - id: 1.1.4
+      text: "More than one test with tests rather than subchecks"
+      audit: "echo test"
+      tests:
+        test_items:
+        - flag: "test"
+          set: true			  
+      remediation: "Make it work"
       scored: true
+- id: 2.1
+  text: "API Server"
+  type: "skip"
+  checks:
+    - id: 2.1.1
+      type: "skip"
+      text: "Ensure that the --allow-privileged argument is set to false (Scored)"
+      audit: "ps -ef | grep $apiserverbin | grep -v grep"
+      tests:
+        test_items:
+        - flag: "allow-privileged"
+          compare:
+            op: eq
+            value: false
+          set: true
+      remediation: "Edit the $apiserverconf file on the master node and set 
+                the KUBE_ALLOW_PRIV parameter to \"--allow-privileged=false\""
+      scored: true
+    - id: 2.1.2
+      text: "Ensure that the --allow-privileged argument is set to false (Scored)"
+      sub_checks:
+      - check:
+        audit: "this is a subcheck audit string"
+        tests:
+          test_items:
+          - flag: "allow-privileged"
+            compare:
+              op: eq
+              value: false
+            set: true			  
+      remediation: "Make it work"
+      scored: true
+    - id: 2.1.3
+      text: "More than one test with tests rather than subchecks"
+      audit: "some other audit string"
+      tests:
+        test_items:
+        - flag: "allow-privileged"
+          compare:
+            op: eq
+            value: false
+          set: true			  
+      remediation: "Make it work"
+      scored: true
+
 `
+const (
+	PASSIndex = 0
+	FAILIndex = 1
+	WARNIndex = 2
+	INFOIndex = 3
+)
 
 var definedTestConstraints = []string{"platform=ubuntu", "platform=rhel", "boot=grub"}
 
 func TestRunGroup(t *testing.T) {
-	c, err := NewControls([]byte(def), definedTestConstraints)
-	if err != nil {
-		t.Fatalf("could not create control object: %s", err)
-	}
 
-	c.RunGroup()
+	type TestCase struct {
+		name     string
+		groupIDs []string
+		Expected [4]int
+	}
+	testCases := []TestCase{
+		{name: "test 1 - skip group", groupIDs: []string{"2.1"}, Expected: [4]int{0, 0, 0, 3}},
+		{name: "test 2 - regular group", groupIDs: []string{"1.1"}, Expected: [4]int{1, 2, 1, 0}},
+		{name: "test 3 - skip and regular group", groupIDs: []string{"1.1", "2.1"}, Expected: [4]int{1, 2, 1, 3}},
+	}
+	for _, test := range testCases {
+
+		c, err := NewControls([]byte(def), definedTestConstraints)
+		if err != nil {
+			t.Fatalf("could not create control object: %s", err)
+		}
+
+		output := c.RunGroup(test.groupIDs...)
+		if !(output.Pass == test.Expected[PASSIndex] && output.Fail == test.Expected[FAILIndex] && output.Warn == test.Expected[WARNIndex] && output.Info == test.Expected[INFOIndex]) {
+			t.Errorf("%s failed\nexpected: PASS[%d] FAIL[%d] WARN[%d] INFO[%d] got:\nPASS[%d] FAIL[%d] WARN[%d] INFO[%d]\n", test.name, test.Expected[PASSIndex], test.Expected[FAILIndex], test.Expected[WARNIndex], test.Expected[INFOIndex], output.Pass, output.Fail, output.Warn, output.Info)
+		}
+	}
 }
 
-// TODO: make this test useful as of now it never fails.
 func TestRunChecks(t *testing.T) {
-	c, err := NewControls([]byte(def), definedTestConstraints)
-	if err != nil {
-		t.Fatalf("could not create control object: %s", err)
+
+	type TestCase struct {
+		name     string
+		checks   []string
+		Expected [4]int
+	}
+	testCases := []TestCase{
+		{name: "test 1 - one skip test", checks: []string{"2.1.1"}, Expected: [4]int{0, 0, 0, 1}},
+		{name: "test 2 - one fail test", checks: []string{"1.1.2"}, Expected: [4]int{0, 1, 0, 0}},
+		{name: "test 3 - one pass test", checks: []string{"1.1.4"}, Expected: [4]int{1, 0, 0, 0}},
+		{name: "test 4 - one pass test", checks: []string{"1.1.3"}, Expected: [4]int{0, 0, 1, 0}},
+		{name: "test 5 - one fail and one skip tests", checks: []string{"1.1.2", "2.1.1"}, Expected: [4]int{0, 1, 0, 1}},
+		{name: "test 6 - two fail tests one skip test", checks: []string{"1.1.2", "2.1.2", "2.1.1"}, Expected: [4]int{0, 2, 0, 1}},
+		{name: "test 7 - one of each", checks: []string{"1.1.3", "1.1.2", "2.1.1", "1.1.4"}, Expected: [4]int{1, 1, 1, 1}},
 	}
 
-	c.RunChecks("1.1.2")
+	for _, test := range testCases {
+
+		c, err := NewControls([]byte(def), definedTestConstraints)
+		if err != nil {
+			t.Fatalf("could not create control object: %s", err)
+		}
+
+		output := c.RunChecks(test.checks...)
+		if !(output.Pass == test.Expected[PASSIndex] && output.Fail == test.Expected[FAILIndex] && output.Warn == test.Expected[WARNIndex] && output.Info == test.Expected[INFOIndex]) {
+			t.Errorf("%s failed\nexpected: PASS[%d] FAIL[%d] WARN[%d] INFO[%d] got:\nPASS[%d] FAIL[%d] WARN[%d] INFO[%d]\n", test.name, test.Expected[PASSIndex], test.Expected[FAILIndex], test.Expected[WARNIndex], test.Expected[INFOIndex], output.Pass, output.Fail, output.Warn, output.Info)
+		}
+
+	}
 }
 
 func TestSummarizeGroup(t *testing.T) {

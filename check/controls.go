@@ -73,9 +73,12 @@ func (controls *Controls) RunGroup(gids ...string) Summary {
 							groupConstraintsOk = isSubCheckCompatible(testConstraintKey, testConstraintVals, controls.DefinedConstraints)
 							// If group constraints is not applied then skip test.
 							if !groupConstraintsOk {
-								check.Type = "skip"
+								check.Type = SKIP
 							}
 						}
+					}
+					if group.Type == SKIP {
+						check.Type = SKIP
 					}
 					check.Run(controls.DefinedConstraints)
 					check.TestInfo = append(check.TestInfo, check.Remediation)
