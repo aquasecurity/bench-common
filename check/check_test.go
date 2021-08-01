@@ -342,6 +342,5 @@ func TestRunAuditCommands(t *testing.T) {
 		if (errmsg == "") && c.err {
 			t.Errorf("Test %d unexpectedly didn't return an error message", i)
 		}
-		fmt.Printf("output %s, err %s\n", output, errmsg)
 	}
 }
