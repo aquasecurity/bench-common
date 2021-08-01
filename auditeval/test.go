@@ -167,9 +167,9 @@ func getFlagValue(s, flag string) string {
 
 	var flagVal string
 	pttns := []string{
-		`(?:^|[\s]+)` + flag + `\s*[=:][\r\t\f\v ]*"(.*)"`,
-		`(?:^|[\s]+)` + flag + `\s*[=:][\r\t\f\v ]*([^\s]*)`,
-		`(?:^|[\s]+)` + flag + `\s+([^-\s]+)`,
+		`(?:^|[\s]+)"?` + flag + `"?\s*[=:][\r\t\f\v ]*"(.*)"`,
+		`(?:^|[\s]+)"?` + flag + `"?\s*[=:][\r\t\f\v ]*([^\s]*)`,
+		`(?:^|[\s]+)"?` + flag + `"?\s+([^-\s]+)`,
 		`(?:^|[\s]+)` + `(` + flag + `)` + `(?:[\s]|$)`,
 	}
 	for _, pttn := range pttns {
@@ -217,7 +217,7 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 				flagVal = getFlagValue(output, t.Flag)
 			}
 
-			TestResult, ExpectedResult, err = compareOp(t.Compare.Op, flagVal, t.Compare.Value)
+			TestResult, ExpectedResult, err = compareOp(t.Compare.Op, flagVal, t.Compare.Value, t.Flag)
 		} else {
 			ExpectedResult = fmt.Sprintf("'%s' Is present", t.Flag)
 			TestResult, _ = regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, output)
@@ -227,21 +227,25 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 		r, _ := regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, output)
 		TestResult = !r
 	}
-
+	glog.V(3).Infof("evaluate ExpectedResult: %s", ExpectedResult)
+	glog.V(3).Infof("evaluate TestResult: %v", TestResult)
+	if err != nil {
+		glog.V(2).Infof("evaluate Error: %v", err)
+	}
 	return TestResult, ExpectedResult, err
 }
 
-func compareOp(tCompareOp string, flagVal string, tCompareValue string) (bool, string, error) {
+func compareOp(tCompareOp, flagVal, tCompareValue, flagName string) (bool, string, error) {
 	expectedResultPattern := ""
 	testResult := false
-
+	glog.V(3).Infof("Actual value flag '%s' = '%s'", flagName, flagVal)
 	switch tCompareOp {
 	case "eq":
 		expectedResultPattern = "'%s' is equal to '%s'"
 		value := strings.ToLower(flagVal)
 		// In case the result should be empty, changing the status to indicate "No output"
 		if tCompareValue == "" && flagVal == "" {
-			expectedResultPattern = "%s%sNo output"
+			expectedResultPattern = "%s '%s' has no output"
 		}
 		// Do case insensitive comparison for booleans ...
 		if value == "false" || value == "true" {
@@ -263,23 +267,25 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (bool, s
 	case "gt", "gte", "lt", "lte":
 		a, b, err := toNumeric(flagVal, tCompareValue)
 		if err != nil {
-			return false, "Invalid Number(s) used for comparison", fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
+			expectedResultPattern = "Invalid Number(s) used for comparison: '%s' '%s'"
+			glog.V(1).Infof(fmt.Sprintf("Not numeric value - flag: %q - compareValue: %q %v\n", flagVal, tCompareValue, err))
+			return false, fmt.Sprintf(expectedResultPattern, flagVal, tCompareValue), fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
 		}
 		switch tCompareOp {
 		case "gt":
-			expectedResultPattern = "%s is greater than %s"
+			expectedResultPattern = "'%s' is greater than %s"
 			testResult = a > b
 
 		case "gte":
-			expectedResultPattern = "%s is greater or equal to %s"
+			expectedResultPattern = "'%s' is greater or equal to %s"
 			testResult = a >= b
 
 		case "lt":
-			expectedResultPattern = "%s is lower than %s"
+			expectedResultPattern = "'%s' is lower than %s"
 			testResult = a < b
 
 		case "lte":
-			expectedResultPattern = "%s is lower or equal to %s"
+			expectedResultPattern = "'%s' is lower or equal to %s"
 			testResult = a <= b
 		}
 
@@ -288,11 +294,11 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (bool, s
 		testResult = strings.Contains(flagVal, tCompareValue)
 
 	case "nothave":
-		expectedResultPattern = " '%s' does not have '%s'"
+		expectedResultPattern = "'%s' does not have '%s'"
 		testResult = !strings.Contains(flagVal, tCompareValue)
 
 	case "regex":
-		expectedResultPattern = " '%s' matched by '%s'"
+		expectedResultPattern = "'%s' matched by regex expression '%s'"
 		opRe := regexp.MustCompile(tCompareValue)
 		testResult = opRe.MatchString(flagVal)
 
@@ -303,21 +309,23 @@ func compareOp(tCompareOp string, flagVal string, tCompareValue string) (bool, s
 		testResult = allElementsValid(s, target)
 
 	case "bitmask":
-		expectedResultPattern = "bitmask '%s' AND '%s'"
+		expectedResultPattern = "'%s' has permissions " + flagVal + ", expected %s or more restrictive"
 		requested, err := strconv.ParseInt(flagVal, 8, 64)
 		if err != nil {
-			return false, "Invalid Number(s) used for bitmask", fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
+			expectedResultPattern = "'%s' has a non numeric value: '%s'"
+			return false, fmt.Sprintf(expectedResultPattern, flagName, flagVal), fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
 		}
 		max, err := strconv.ParseInt(tCompareValue, 8, 64)
 		if err != nil {
-			return false, "Invalid Number(s) used for bitmask", fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
+			expectedResultPattern = "'%s' is testing for a non numeric value: '%s'"
+			return false, fmt.Sprintf(expectedResultPattern, flagName, tCompareValue), fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
 		}
 		testResult = (max & requested) == requested
 	default:
 		return testResult, expectedResultPattern, nil
 	}
 
-	return testResult, fmt.Sprintf(expectedResultPattern, flagVal, tCompareValue), nil
+	return testResult, fmt.Sprintf(expectedResultPattern, flagName, tCompareValue), nil
 }
 
 func allElementsValid(s, t []string) bool {
