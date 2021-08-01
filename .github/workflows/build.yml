@@ -39,4 +39,3 @@ jobs:
         with:
           version: v0.169.0
           args: release --snapshot --skip-publish --rm-dist
-
