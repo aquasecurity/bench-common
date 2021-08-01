@@ -71,7 +71,7 @@ func TestTestExecute(t *testing.T) {
 	}
 
 	for i, c := range cases {
-		res := ts.Execute(c.str, string(i), false)
+		res := ts.Execute(c.str, string(rune(i)), false)
 		if res.TestResult != c.want {
 			t.Errorf("expected:%v, got:%v\n", c.want, res)
 		}
@@ -217,7 +217,7 @@ func Test_ExecuteMultipleOutput(t *testing.T) {
 	}
 
 	for i, c := range cases {
-		res := ts.Execute(c.auditCommandOutput, string(i), c.testWithMultiple)
+		res := ts.Execute(c.auditCommandOutput, string(rune(i)), c.testWithMultiple)
 		if res.TestResult != c.expectedResult {
 			t.Errorf("expected:%v, got:%v\n", c.expectedResult, res.TestResult)
 		}
