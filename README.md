@@ -1,8 +1,12 @@
-[![Build Status](https://travis-ci.org/aquasecurity/bench-common.svg?branch=main)](https://travis-ci.org/aquasecurity/bench-common)
+[![GitHub Build Actions][build-action-img]][actions]
+[![GitHub Release Actions][release-action-img]][actions]
 [![Coverage Status][cov-img]][cov]
 
 [cov-img]: https://codecov.io/github/aquasecurity/bench-common/branch/main/graph/badge.svg
 [cov]: https://codecov.io/github/aquasecurity/bench-common
+[actions]: https://github.com/aquasecurity/bench-common/actions
+[build-action-img]: https://github.com/aquasecurity/bench-common/workflows/build/badge.svg
+[release-action-img]: https://github.com/aquasecurity/bench-common/workflows/release/badge.svg
 
 # Build and Test
 ## Requirement
