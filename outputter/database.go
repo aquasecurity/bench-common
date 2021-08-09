@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/aquasecurity/bench-common/check"
-	"github.com/jinzhu/gorm"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 // PgSQL contains the database connection information
@@ -69,22 +70,17 @@ func (pg *PgSQL) Output(controls *check.Controls, summary check.Summary) error {
 		ScanInfo string    `gorm:"type:jsonb not null"`
 	}
 
-	db, err := gorm.Open("postgres", connInfo)
+	db, err := gorm.Open(postgres.Open(connInfo), &gorm.Config{})
 	if err != nil {
 		return fmt.Errorf("unable to save PostgreSQL data - received error connecting to database: %v", err)
 	}
-	defer db.Close()
 
-	db.Debug().AutoMigrate(&ScanResult{})
-	errs := db.GetErrors()
-	if len(errs) > 0 {
-		return fmt.Errorf("unable to save PostgreSQL data - AutoMigrate: %v", errs)
+	if err = db.Debug().AutoMigrate(&ScanResult{}); err != nil {
+		return fmt.Errorf("unable to save PostgreSQL data - AutoMigrate: %v", err)
 	}
 
-	db.Save(&ScanResult{ScanHost: hostname, ScanTime: time.Now(), ScanInfo: string(jsonPayload)})
-	errs = db.GetErrors()
-	if len(errs) > 0 {
-		return fmt.Errorf("unable to save PostgreSQL data - Save: %v", errs)
+	if err = db.Save(&ScanResult{ScanHost: hostname, ScanTime: time.Now(), ScanInfo: string(jsonPayload)}).Error; err != nil {
+		return fmt.Errorf("unable to save PostgreSQL data - Save: %v", err)
 	}
 
 	return nil

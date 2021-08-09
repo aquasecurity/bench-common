@@ -91,13 +91,13 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 			SubChecks: []*SubCheck{
 				{
 					BaseCheck{
-						Constraints: map[string][]string{"platform": []string{"ubuntu"}},
+						Constraints: map[string][]string{"platform": {"ubuntu"}},
 						Remediation: "Expected",
 					},
 				},
 				{
 					BaseCheck{
-						Constraints: map[string][]string{"platform": []string{"rhel"}},
+						Constraints: map[string][]string{"platform": {"rhel"}},
 						Remediation: "Not expected",
 					},
 				},
@@ -109,13 +109,13 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 			SubChecks: []*SubCheck{
 				{
 					BaseCheck{
-						Constraints: map[string][]string{"platform": []string{"rhel"}},
+						Constraints: map[string][]string{"platform": {"rhel"}},
 						Remediation: "Not expected",
 					},
 				},
 				{
 					BaseCheck{
-						Constraints: map[string][]string{"platform": []string{"ubuntu"}},
+						Constraints: map[string][]string{"platform": {"ubuntu"}},
 						Remediation: "Expected",
 					},
 				},
@@ -127,13 +127,13 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 			SubChecks: []*SubCheck{
 				{
 					BaseCheck{
-						Constraints: map[string][]string{"platform": []string{"rhel"}},
+						Constraints: map[string][]string{"platform": {"rhel"}},
 						Remediation: "Not expected",
 					},
 				},
 				{
 					BaseCheck{
-						Constraints: map[string][]string{"platform": []string{"ubuntu"}, "boot": []string{"grub"}},
+						Constraints: map[string][]string{"platform": {"ubuntu"}, "boot": {"grub"}},
 						Remediation: "Expected",
 					},
 				},
@@ -145,13 +145,13 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 			SubChecks: []*SubCheck{
 				{
 					BaseCheck{
-						Constraints: map[string][]string{"platform": []string{"rhel"}},
+						Constraints: map[string][]string{"platform": {"rhel"}},
 						Remediation: "Not expected",
 					},
 				},
 				{
 					BaseCheck{
-						Constraints: map[string][]string{"platform": []string{"ubuntu"}, "boot": []string{"grub", "also valid for something else"}},
+						Constraints: map[string][]string{"platform": {"ubuntu"}, "boot": {"grub", "also valid for something else"}},
 						Remediation: "Expected",
 					},
 				},
@@ -162,13 +162,13 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 			SubChecks: []*SubCheck{
 				{
 					BaseCheck{
-						Constraints: map[string][]string{"platform": []string{"rhel", "another"}},
+						Constraints: map[string][]string{"platform": {"rhel", "another"}},
 						Remediation: "Not expected",
 					},
 				},
 				{
 					BaseCheck{
-						Constraints: map[string][]string{"platform": []string{"ubuntu"}, "boot": []string{"another"}},
+						Constraints: map[string][]string{"platform": {"ubuntu"}, "boot": {"another"}},
 						Remediation: "Not expected",
 					},
 				},
@@ -192,7 +192,7 @@ func TestGetFirstValidSubCheck(t *testing.T) {
 			SubChecks: []*SubCheck{
 				{
 					BaseCheck{
-						Constraints: map[string][]string{"something": []string{"not", "defined"}},
+						Constraints: map[string][]string{"something": {"not", "defined"}},
 						Remediation: "Expected",
 					},
 				},
