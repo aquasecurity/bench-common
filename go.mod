@@ -10,7 +10,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1
 	gopkg.in/yaml.v2 v2.4.0
-	gorm.io/driver/postgres v1.1.0
-	gorm.io/gorm v1.21.14
+	gorm.io/driver/postgres v1.1.1
+	gorm.io/gorm v1.21.15
 	k8s.io/client-go v0.22.1
 )
