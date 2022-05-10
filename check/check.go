@@ -76,8 +76,8 @@ type BaseCheck struct {
 	AuditType     AuditType           `json:"audit_type"`
 	Audit         interface{}         `json:"audit"`
 	Type          string              `json:"type"`
-	Commands      []*exec.Cmd         `json:"omit"`
-	Tests         *auditeval.Tests    `json:"omit"`
+	Commands      []*exec.Cmd         `json:"-"`
+	Tests         *auditeval.Tests    `json:"-"`
 	Remediation   string              `json:"-"`
 	Constraints   map[string][]string `yaml:"constraints"`
 	auditer       Auditer
@@ -92,14 +92,14 @@ type SubCheck struct {
 // Check contains information about a recommendation.
 type Check struct {
 	ID             string           `yaml:"id" json:"test_number"`
-	Description    string           `json:"test_desc"`
-	Set            bool             `json:"omit"`
+	Description    string           `json:"test_desc" yaml:"text"`
+	Set            bool             `json:"-"`
 	SubChecks      []*SubCheck      `yaml:"sub_checks"`
 	AuditType      AuditType        `json:"audit_type"`
 	Audit          interface{}      `json:"audit"`
 	Type           string           `json:"type"`
-	Commands       []*exec.Cmd      `json:"omit"`
-	Tests          *auditeval.Tests `json:"omit"`
+	Commands       []*exec.Cmd      `json:"-"`
+	Tests          *auditeval.Tests `json:"-"`
 	Remediation    string           `json:"-"`
 	TestInfo       []string         `json:"test_info"`
 	State          `json:"status"`
@@ -115,7 +115,7 @@ type Check struct {
 // Group is a collection of similar checks.
 type Group struct {
 	ID          string              `yaml:"id" json:"section"`
-	Description string              `json:"desc"`
+	Description string              `json:"desc" yaml:"text"`
 	Constraints map[string][]string `yaml:"constraints"`
 	Type        string              `yaml:"type" json:"type"`
 	Checks      []*Check            `json:"results"`

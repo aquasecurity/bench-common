@@ -32,8 +32,8 @@ type Auditer interface {
 // Controls holds all controls to check for master nodes.
 type Controls struct {
 	ID          string   `yaml:"id" json:"id"`
-	Description string   `json:"text"`
-	Groups      []*Group `json:"tests"`
+	Description string   `json:"text" yaml:"text"`
+	Groups      []*Group `json:"tests" yaml:"groups"`
 	Summary
 	DefinedConstraints map[string][]string
 	customConfigs      []interface{}
