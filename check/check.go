@@ -92,7 +92,8 @@ type SubCheck struct {
 // Check contains information about a recommendation.
 type Check struct {
 	ID             string           `yaml:"id" json:"test_number"`
-	Description    string           `json:"test_desc" yaml:"text"`
+	Description    string           `json:"test_desc"`
+	Text           string           `json:"-"`
 	Set            bool             `json:"-"`
 	SubChecks      []*SubCheck      `yaml:"sub_checks"`
 	AuditType      AuditType        `json:"audit_type"`
@@ -115,7 +116,8 @@ type Check struct {
 // Group is a collection of similar checks.
 type Group struct {
 	ID          string              `yaml:"id" json:"section"`
-	Description string              `json:"desc" yaml:"text"`
+	Description string              `json:"desc"`
+	Text        string              `json:"-"`
 	Constraints map[string][]string `yaml:"constraints"`
 	Type        string              `yaml:"type" json:"type"`
 	Checks      []*Check            `json:"results"`
