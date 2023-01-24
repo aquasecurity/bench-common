@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // Bench implementer of this interface represent audit types to be tests.

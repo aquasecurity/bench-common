@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/aquasecurity/bench-common/auditeval"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // For the tests, say that we are running on an ubuntu system using the grub bootloader
