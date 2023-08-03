@@ -82,7 +82,7 @@ type BaseCheck struct {
 	Constraints   map[string][]string `yaml:"constraints"`
 	auditer       Auditer
 	customConfigs []interface{}
-	OsTypeCommand interface{}
+	OsTypeCommand interface{} `json:"-"`
 }
 
 // SubCheck additional check to be performed.
@@ -111,8 +111,8 @@ type Check struct {
 	IsMultiple     bool   `yaml:"use_multiple_values"`
 	auditer        Auditer
 	customConfigs  []interface{}
-	Reason         string `json:"reason,omitempty"`
-	OsTypeCommand  interface{}
+	Reason         string      `json:"reason,omitempty"`
+	OsTypeCommand  interface{} `json:"-"`
 }
 
 // Group is a collection of similar checks.
