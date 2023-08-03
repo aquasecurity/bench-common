@@ -115,7 +115,6 @@ func (b *bench) extractAllAudits(controls *Controls) (err error) {
 				}
 				check.auditer = audit
 				check.customConfigs = controls.customConfigs
-				check.OsTypeCommand = check.Audit
 			} else {
 				for _, subCheck := range check.SubChecks {
 					if audit, err = b.convertAuditToRegisteredType(subCheck.AuditType, subCheck.Audit); err != nil {
@@ -123,7 +122,6 @@ func (b *bench) extractAllAudits(controls *Controls) (err error) {
 					}
 					subCheck.auditer = audit
 					subCheck.customConfigs = controls.customConfigs
-					check.OsTypeCommand = check.Audit
 				}
 			}
 		}
