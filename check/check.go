@@ -82,6 +82,7 @@ type BaseCheck struct {
 	Constraints   map[string][]string `yaml:"constraints"`
 	auditer       Auditer
 	customConfigs []interface{}
+	OsTypeCommand interface{} `json:"-"`
 }
 
 // SubCheck additional check to be performed.
@@ -110,7 +111,8 @@ type Check struct {
 	IsMultiple     bool   `yaml:"use_multiple_values"`
 	auditer        Auditer
 	customConfigs  []interface{}
-	Reason         string `json:"reason,omitempty"`
+	Reason         string      `json:"reason,omitempty"`
+	OsTypeCommand  interface{} `json:"-"`
 }
 
 // Group is a collection of similar checks.
@@ -168,6 +170,7 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 			AuditType:     c.AuditType,
 			auditer:       c.auditer,
 			customConfigs: c.customConfigs,
+			OsTypeCommand: c.OsTypeCommand,
 		}
 	} else {
 		subCheck = getFirstValidSubCheck(c.SubChecks, definedConstraints)
@@ -258,6 +261,9 @@ func runAuditCommands(c BaseCheck) (output, errMessage string, state State) {
 		return output, errMessage, INFO
 	}
 	if c.auditer != nil {
+		if len(c.customConfigs) == 0 {
+			c.customConfigs = append(c.customConfigs, c.OsTypeCommand)
+		}
 		return c.auditer.Execute(c.customConfigs...)
 	}
 	return
