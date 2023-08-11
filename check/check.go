@@ -258,6 +258,9 @@ func runAuditCommands(c BaseCheck) (output, errMessage string, state State) {
 		return output, errMessage, INFO
 	}
 	if c.auditer != nil {
+		if len(c.customConfigs) == 0 {
+			c.customConfigs = append(c.customConfigs, c.Audit)
+		}
 		return c.auditer.Execute(c.customConfigs...)
 	}
 	return
