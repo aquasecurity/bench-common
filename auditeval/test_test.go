@@ -131,6 +131,7 @@ func Test_getFlagValue(t *testing.T) {
 		// Check for empty values
 		{Input: "XXX: User=", Flag: "User", Expected: ""},
 		{Input: "XXX: User= ", Flag: "User", Expected: ""},
+		{Input: "XXX:User=", Flag: "User", Expected: ""}, // There is 0 space between Colon and Flag
 		// Check flag as is
 		{Input: "--flag", Flag: "--flag", Expected: "--flag"},
 		{Input: " --flag", Flag: "--flag", Expected: "--flag"},
