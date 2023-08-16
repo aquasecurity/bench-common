@@ -171,6 +171,7 @@ func getFlagValue(s, flag string) string {
 		`(?:^|[\s]+)"?` + flag + `"?\s*[=:][\r\t\f\v ]*([^\s]*)`,
 		`(?:^|[\s]+)"?` + flag + `"?\s+([^-\s]+)`,
 		`(?:^|[\s]+)` + `(` + flag + `)` + `(?:[\s]|$)`,
+		flag + `[=:]([^\s]*)`,
 	}
 	for _, pttn := range pttns {
 		flagRe := regexp.MustCompile(pttn)
