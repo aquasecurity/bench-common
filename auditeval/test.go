@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/glog"
 	yaml "gopkg.in/yaml.v3"
 	"k8s.io/client-go/util/jsonpath"
 )
@@ -105,7 +104,6 @@ func (ts *Tests) Execute(s, testID string, isMultipleOutput bool) *TestOutput {
 	for i, t := range ts.TestItems {
 		res[i], err = t.execute(s, isMultipleOutput)
 		if err != nil {
-			glog.V(2).Infof("Failed running test %s. %s", testID, err)
 		}
 	}
 
@@ -228,10 +226,8 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 		r, _ := regexp.MatchString(t.Flag+`(?:[^a-zA-Z0-9-_]|$)`, output)
 		TestResult = !r
 	}
-	glog.V(3).Infof("evaluate ExpectedResult: %s", ExpectedResult)
-	glog.V(3).Infof("evaluate TestResult: %v", TestResult)
+
 	if err != nil {
-		glog.V(2).Infof("evaluate Error: %v", err)
 	}
 	return TestResult, ExpectedResult, err
 }
@@ -239,7 +235,6 @@ func (t *testItem) evaluate(output string) (TestResult bool, ExpectedResult stri
 func compareOp(tCompareOp, flagVal, tCompareValue, flagName string) (bool, string, error) {
 	expectedResultPattern := ""
 	testResult := false
-	glog.V(3).Infof("Actual value flag '%s' = '%s'", flagName, flagVal)
 	switch tCompareOp {
 	case "eq":
 		expectedResultPattern = "'%s' is equal to '%s'"
@@ -269,7 +264,6 @@ func compareOp(tCompareOp, flagVal, tCompareValue, flagName string) (bool, strin
 		a, b, err := toNumeric(flagVal, tCompareValue)
 		if err != nil {
 			expectedResultPattern = "Invalid Number(s) used for comparison: '%s' '%s'"
-			glog.V(1).Infof(fmt.Sprintf("Not numeric value - flag: %q - compareValue: %q %v\n", flagVal, tCompareValue, err))
 			return false, fmt.Sprintf(expectedResultPattern, flagVal, tCompareValue), fmt.Errorf("not numeric value - flag: %q - compareValue: %q %v", flagVal, tCompareValue, err)
 		}
 		switch tCompareOp {

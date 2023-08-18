@@ -22,7 +22,6 @@ import (
 
 	"github.com/aquasecurity/bench-common/check"
 	"github.com/fatih/color"
-	"github.com/golang/glog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -178,7 +177,6 @@ func PrintOutput(output string, outputFile string) {
 		err := writeOutputToFile(output, outputFile)
 		if err != nil {
 			s := fmt.Sprintf("Failed to write to output file %s", outputFile)
-			glog.V(1).Info(err)
 			fmt.Fprintf(os.Stderr, "%s\n", s)
 		}
 	}
@@ -191,7 +189,6 @@ func GetSubstitutionMap(substituData []byte) (map[string]string, error) {
 	outputMap := make(map[string]string)
 	err := yaml.Unmarshal(substituData, &fileMap)
 	if err != nil {
-		glog.V(1).Info(fmt.Sprintf("failed to unmarshal YAML: %s", err))
 		return nil, err
 	}
 	for k, v := range fileMap {
@@ -205,10 +202,8 @@ func MakeSubstitutions(s string, ext string, m map[string]string) string {
 	for k, v := range m {
 		subst := "$" + k + ext
 		if v == "" {
-			glog.V(2).Info(fmt.Sprintf("No substitution for '%s'\n", subst))
 			continue
 		}
-		glog.V(2).Info(fmt.Sprintf("Substituting %s with '%s'\n", subst, v))
 		s = multiWordReplace(s, subst, v)
 	}
 

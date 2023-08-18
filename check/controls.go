@@ -19,8 +19,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-
-	"github.com/golang/glog"
 	"github.com/onsi/ginkgo/reporters"
 )
 
@@ -204,7 +202,7 @@ func (controls *Controls) JUnit() ([]byte, error) {
 				tc.Skipped = &reporters.JUnitSkipped{}
 			case PASS:
 			default:
-				glog.Warningf("Unrecognized state %s", check.State)
+
 			}
 
 			suite.TestCases = append(suite.TestCases, tc)

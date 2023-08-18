@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/aquasecurity/bench-common/auditeval"
-	"github.com/golang/glog"
 )
 
 // State is the state of a control check.
@@ -130,12 +129,10 @@ type Group struct {
 // Run executes the audit commands specified in a check and outputs
 // the results.
 func (c *Check) Run(definedConstraints map[string][]string) {
-	glog.V(3).Infof("----- Running check %v -----", c.ID)
 	// If check type is skip, force result to INFO
 	if c.Type == SKIP {
 		c.Reason = "Test marked as skip"
 		c.State = INFO
-		glog.V(3).Info(c.Reason)
 		return
 	}
 
@@ -143,7 +140,6 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 	if c.Type == "manual" {
 		c.Reason = "Test marked as a manual test"
 		c.State = WARN
-		glog.V(3).Info(c.Reason)
 		return
 	}
 
@@ -153,7 +149,6 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 	if len(strings.TrimSpace(c.Type)) == 0 && c.Tests == nil && c.SubChecks == nil {
 		c.Reason = "There are no test items"
 		c.State = WARN
-		glog.V(3).Info(c.Reason)
 		return
 	}
 
@@ -175,8 +170,6 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 		if subCheck == nil {
 			c.Reason = "Failed to find a valid sub check, check your constraints "
 			c.State = WARN
-			glog.V(1).Info("Failed to find a valid sub check, check your constraints")
-			glog.V(3).Info(c.Reason)
 			return
 		}
 	}
@@ -186,12 +179,10 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 	out, errmsgs, c.State = runAuditCommands(*subCheck)
 
 	if errmsgs != "" {
-		glog.V(2).Info(errmsgs)
 		c.Reason = out
 		// Make output more readable
 		if (errmsgs == "exit status 127" || errmsgs == "exit status 1") && strings.HasSuffix(out, "not found\n") {
 			c.Reason = strings.Replace(c.Reason, "sh: 1:", "Command", -1)
-			glog.V(3).Info(c.Reason)
 		}
 	}
 
@@ -214,12 +205,9 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 		}
 	} else {
 		c.State = WARN
-		glog.V(1).Info("Test output contains a nil value")
 		c.Reason = "Test output contains a nil value"
-		glog.V(3).Info(c.Reason)
 		return
 	}
-	glog.V(3).Infof("TestResult: %t, State: %q \n ", finalOutput.TestResult, c.State)
 }
 
 func runAudit(audit string) (output string, err error) {
@@ -239,10 +227,6 @@ func runAudit(audit string) (output string, err error) {
 
 	if err != nil {
 		err = fmt.Errorf("failed to run: %q, output: %q, error: %s", audit, output, err)
-	} else {
-		glog.V(3).Infof("Command %q ", audit)
-		glog.V(3).Infof("Output: %q", output)
-
 	}
 	return output, err
 }
