@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/glog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -66,8 +65,6 @@ func (b *bench) NewControls(in []byte, definitions []string, customConfigs ...in
 			// If its type 'category=value' for example 'platform=ubuntu'
 			if len(a) == 2 && a[0] != "" && a[1] != "" {
 				c.DefinedConstraints[a[0]] = append(c.DefinedConstraints[a[0]], a[1])
-			} else {
-				glog.V(1).Info("failed to parse defined constraint, ", val)
 			}
 		}
 	}

@@ -1,22 +1,18 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/aquasecurity/bench-common/check"
 	"github.com/aquasecurity/bench-common/outputter"
 	"github.com/aquasecurity/bench-common/util"
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 )
 
 func app(cmd *cobra.Command, args []string) {
-	glog.V(2).Info(fmt.Sprintf("Looking for config file: %s\n", cfgFile))
 	_, err := os.Stat(cfgFile)
 	if err != nil {
-		glog.V(2).Info(fmt.Sprintf("config file: %s not found.\n", cfgFile))
 		util.ExitWithError(err)
 	}
 
