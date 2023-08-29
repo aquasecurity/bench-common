@@ -16,9 +16,10 @@ package check
 
 import (
 	"fmt"
+	"github.com/aquasecurity/bench-common/log"
+	"go.uber.org/zap"
 	"strings"
 
-	"github.com/golang/glog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -57,6 +58,13 @@ func (b *bench) NewControls(in []byte, definitions []string, customConfigs ...in
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal YAML: %s", err)
 	}
+
+	logger, err := log.ZapLogger(nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	defer logger.Sync() // nolint: errcheck
+
 	c.customConfigs = customConfigs
 	if len(definitions) > 0 {
 		c.DefinedConstraints = map[string][]string{}
@@ -67,7 +75,7 @@ func (b *bench) NewControls(in []byte, definitions []string, customConfigs ...in
 			if len(a) == 2 && a[0] != "" && a[1] != "" {
 				c.DefinedConstraints[a[0]] = append(c.DefinedConstraints[a[0]], a[1])
 			} else {
-				glog.V(1).Info("failed to parse defined constraint, ", val)
+				logger.Debug("failed to parse defined constraint ", zap.String("val", val))
 			}
 		}
 	}

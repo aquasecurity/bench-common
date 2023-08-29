@@ -2,21 +2,28 @@ package main
 
 import (
 	"fmt"
+	"github.com/aquasecurity/bench-common/log"
 	"io/ioutil"
 	"os"
 
 	"github.com/aquasecurity/bench-common/check"
 	"github.com/aquasecurity/bench-common/outputter"
 	"github.com/aquasecurity/bench-common/util"
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 )
 
 func app(cmd *cobra.Command, args []string) {
-	glog.V(2).Info(fmt.Sprintf("Looking for config file: %s\n", cfgFile))
-	_, err := os.Stat(cfgFile)
+
+	logger, err := log.ZapLogger(nil, nil)
 	if err != nil {
-		glog.V(2).Info(fmt.Sprintf("config file: %s not found.\n", cfgFile))
+		panic(err)
+	}
+	defer logger.Sync() // nolint: errcheck
+
+	logger.Info(fmt.Sprintf("Looking for config file: %s\n", cfgFile))
+	_, err = os.Stat(cfgFile)
+	if err != nil {
+		logger.Info(fmt.Sprintf("config file: %s not found.\n", cfgFile))
 		util.ExitWithError(err)
 	}
 

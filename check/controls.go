@@ -19,8 +19,9 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/aquasecurity/bench-common/log"
+	"go.uber.org/zap"
 
-	"github.com/golang/glog"
 	"github.com/onsi/ginkgo/reporters"
 )
 
@@ -178,6 +179,13 @@ func (controls *Controls) JUnit() ([]byte, error) {
 		Tests:     controls.Summary.Pass + controls.Summary.Fail + controls.Summary.Info + controls.Summary.Warn,
 		Failures:  controls.Summary.Fail,
 	}
+
+	logger, err := log.ZapLogger(nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	defer logger.Sync() // nolint: errcheck
+
 	for _, g := range controls.Groups {
 		for _, check := range g.Checks {
 			jsonCheck := ""
@@ -204,7 +212,7 @@ func (controls *Controls) JUnit() ([]byte, error) {
 				tc.Skipped = &reporters.JUnitSkipped{}
 			case PASS:
 			default:
-				glog.Warningf("Unrecognized state %s", check.State)
+				logger.Warn("", zap.String("Unrecognized state", string(check.State)))
 			}
 
 			suite.TestCases = append(suite.TestCases, tc)
@@ -214,7 +222,7 @@ func (controls *Controls) JUnit() ([]byte, error) {
 	var b bytes.Buffer
 	encoder := xml.NewEncoder(&b)
 	encoder.Indent("", "    ")
-	err := encoder.Encode(suite)
+	err = encoder.Encode(suite)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to generate JUnit report: %s", err.Error())
 	}
