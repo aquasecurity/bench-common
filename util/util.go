@@ -17,13 +17,13 @@ package util
 import (
 	"bufio"
 	"fmt"
+	"github.com/aquasecurity/bench-common/check"
+	"github.com/aquasecurity/bench-common/log"
+	"github.com/fatih/color"
+	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
 	"os"
 	"strings"
-
-	"github.com/aquasecurity/bench-common/check"
-	"github.com/fatih/color"
-	"github.com/golang/glog"
-	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -172,13 +172,19 @@ func writeOutputToFile(output string, outputFile string) error {
 
 // PrintOutput writes data to the specified file
 func PrintOutput(output string, outputFile string) {
+	logger, err := log.ZapLogger(nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	defer logger.Sync() // nolint: errcheck
+
 	if len(outputFile) == 0 {
 		fmt.Println(output)
 	} else {
 		err := writeOutputToFile(output, outputFile)
 		if err != nil {
 			s := fmt.Sprintf("Failed to write to output file %s", outputFile)
-			glog.V(1).Info(err)
+			logger.Debug("", zap.Error(err))
 			fmt.Fprintf(os.Stderr, "%s\n", s)
 		}
 	}
@@ -186,12 +192,18 @@ func PrintOutput(output string, outputFile string) {
 
 // GetSubstitutionMap is building the key:value map
 func GetSubstitutionMap(substituData []byte) (map[string]string, error) {
+	logger, err := log.ZapLogger(nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	defer logger.Sync() // nolint: errcheck
+
 	//var yamlConfig Item
 	fileMap := make(map[string]SubstitutionList)
 	outputMap := make(map[string]string)
-	err := yaml.Unmarshal(substituData, &fileMap)
+	err = yaml.Unmarshal(substituData, &fileMap)
 	if err != nil {
-		glog.V(1).Info(fmt.Sprintf("failed to unmarshal YAML: %s", err))
+		logger.Debug(fmt.Sprintf("failed to unmarshal YAML: %s", err))
 		return nil, err
 	}
 	for k, v := range fileMap {
@@ -202,13 +214,19 @@ func GetSubstitutionMap(substituData []byte) (map[string]string, error) {
 
 // MakeSubstitutions will replace all $keys with values.
 func MakeSubstitutions(s string, ext string, m map[string]string) string {
+	logger, err := log.ZapLogger(nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	defer logger.Sync() // nolint: errcheck
+
 	for k, v := range m {
 		subst := "$" + k + ext
 		if v == "" {
-			glog.V(2).Info(fmt.Sprintf("No substitution for '%s'\n", subst))
+			logger.Info(fmt.Sprintf("No substitution for '%s'\n", subst))
 			continue
 		}
-		glog.V(2).Info(fmt.Sprintf("Substituting %s with '%s'\n", subst, v))
+		logger.Info(fmt.Sprintf("Substituting %s with '%s'\n", subst, v))
 		s = multiWordReplace(s, subst, v)
 	}
 
