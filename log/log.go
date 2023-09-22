@@ -23,7 +23,7 @@ func ZapLogger(outputs, errOutputs []string) (logger *zap.Logger, err error) {
 	case "ERROR":
 		level = zap.ErrorLevel
 	default:
-		level = zap.InfoLevel
+		level = zap.ErrorLevel
 	}
 
 	config := zap.Config{
