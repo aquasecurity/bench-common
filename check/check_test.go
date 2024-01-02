@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/aquasecurity/bench-common/auditeval"
+	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -329,5 +330,34 @@ func TestRunAuditCommands(t *testing.T) {
 		if (errmsg == "") && c.err {
 			t.Errorf("Test %d unexpectedly didn't return an error message", i)
 		}
+	}
+}
+
+func TestRemoveUnicodeChars(t *testing.T) {
+	cases := []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{
+			name:  "non unicode chars",
+			value: "test",
+			want:  "test",
+		},
+		{
+			name:  "unicode chars",
+			value: "test\u0000",
+			want:  "test",
+		},
+		{
+			name:  "only unicode chars",
+			value: "\u0000",
+			want:  "",
+		},
+	}
+
+	for _, c := range cases {
+		got := removeUnicodeChars(c.value)
+		assert.Equal(t, c.want, got)
 	}
 }
