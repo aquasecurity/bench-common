@@ -17,11 +17,13 @@ package check
 import (
 	"bytes"
 	"fmt"
+	"os/exec"
+	"strings"
+	"unicode"
+
 	"github.com/aquasecurity/bench-common/auditeval"
 	"github.com/aquasecurity/bench-common/log"
 	"go.uber.org/zap"
-	"os/exec"
-	"strings"
 )
 
 // State is the state of a control check.
@@ -208,7 +210,7 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 	finalOutput := subCheck.Tests.Execute(out, c.ID, c.IsMultiple)
 
 	if finalOutput != nil {
-		c.ActualValue = finalOutput.ActualResult
+		c.ActualValue = removeUnicodeChars(c.ActualValue)
 		c.ExpectedResult = finalOutput.ExpectedResult
 
 		if finalOutput.TestResult {
@@ -226,6 +228,17 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 		return
 	}
 	logger.Warn("", zap.Bool("TestResult", finalOutput.TestResult), zap.String("State", string(c.State)))
+}
+
+// removeUnicodeChars remove non-printable characters from the output
+func removeUnicodeChars(value string) string {
+	cleanValue := strings.Map(func(r rune) rune {
+		if unicode.IsGraphic(r) {
+			return r
+		}
+		return -1
+	}, value)
+	return cleanValue
 }
 
 func runAudit(audit string) (output string, err error) {
