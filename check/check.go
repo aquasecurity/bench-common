@@ -210,7 +210,7 @@ func (c *Check) Run(definedConstraints map[string][]string) {
 	finalOutput := subCheck.Tests.Execute(out, c.ID, c.IsMultiple)
 
 	if finalOutput != nil {
-		c.ActualValue = removeUnicodeChars(c.ActualValue)
+		c.ActualValue = removeUnicodeChars(finalOutput.ActualResult)
 		c.ExpectedResult = finalOutput.ExpectedResult
 
 		if finalOutput.TestResult {
