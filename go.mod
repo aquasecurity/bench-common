@@ -1,6 +1,6 @@
 module github.com/aquasecurity/bench-common
 
-go 1.19
+go 1.21
 
 require (
 	github.com/fatih/color v1.14.1
